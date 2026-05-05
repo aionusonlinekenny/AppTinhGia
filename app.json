@@ -24,14 +24,6 @@
       "package": "com.restaurant.menucostpro",
       "versionCode": 1
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
-    "plugins": [],
-    "extra": {
-      "eas": {
-        "projectId": "menu-cost-pro"
-      }
-    }
+    "plugins": []
   }
 }
