@@ -21,7 +21,6 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#E65100"
       },
-      "edgeToEdgeEnabled": true,
       "package": "com.restaurant.menucostpro",
       "versionCode": 1
     },
