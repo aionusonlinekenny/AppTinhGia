@@ -58,11 +58,11 @@ export default function StaffScreen() {
 
   function validate() {
     const errs = {};
-    if (!form.name.trim()) errs.name = 'Vui lòng nhập tên bộ phận';
+    if (!form.name.trim()) errs.name = 'Enter department name';
     if (!form.hourlyWage || isNaN(Number(form.hourlyWage)) || Number(form.hourlyWage) <= 0)
-      errs.hourlyWage = 'Lương phải là số dương';
+      errs.hourlyWage = 'Wage must be a positive number';
     if (!form.hoursPerMonth || isNaN(Number(form.hoursPerMonth)) || Number(form.hoursPerMonth) <= 0)
-      errs.hoursPerMonth = 'Số giờ phải là số dương';
+      errs.hoursPerMonth = 'Hours must be a positive number';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -85,12 +85,12 @@ export default function StaffScreen() {
 
   function handleDelete(dept) {
     Alert.alert(
-      'Xóa bộ phận',
-      `Bạn chắc chắn muốn xóa bộ phận "${dept.name}"?`,
+      'Delete Department',
+      `Delete "${dept.name}"?`,
       [
-        { text: 'Hủy', style: 'cancel' },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Xóa',
+          text: 'Delete',
           style: 'destructive',
           onPress: () => dispatch({ type: 'DELETE_DEPARTMENT', payload: dept.id }),
         },
@@ -101,26 +101,26 @@ export default function StaffScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <Header
-        title="Nhân viên & Lương"
-        subtitle="Quản lý lương theo giờ cho từng bộ phận"
+        title="Staff & Wages"
+        subtitle="Manage hourly wages by department"
       />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <Card style={styles.summaryCard}>
-          <Text style={styles.summaryLabel}>Tổng lương / tháng (ước tính)</Text>
+          <Text style={styles.summaryLabel}>Total Monthly Wages (estimated)</Text>
           <Text style={styles.summaryValue}>{formatCurrency(totalMonthlyWages)}</Text>
           <Text style={styles.summaryNote}>
-            {departments.length} bộ phận · Dùng để tính chi phí nhân công cho mỗi món
+            {departments.length} departments · Used to calculate labor cost per dish
           </Text>
         </Card>
 
         <SectionTitle
-          text="Danh sách bộ phận"
-          action="+ Thêm"
+          text="Departments"
+          action="+ Add"
           onAction={openAdd}
         />
 
         {departments.length === 0 ? (
-          <EmptyState icon="👥" message="Chưa có bộ phận nào. Thêm bộ phận để tính lương." />
+          <EmptyState icon="👥" message="No departments yet. Add one to calculate labor costs." />
         ) : (
           departments.map(dept => (
             <Card key={dept.id} style={styles.deptCard}>
@@ -131,24 +131,24 @@ export default function StaffScreen() {
                 <View style={styles.deptInfo}>
                   <Text style={styles.deptName}>{dept.name}</Text>
                   <Text style={styles.deptWage}>
-                    {formatCurrency(dept.hourlyWage)} / giờ
+                    {formatCurrency(dept.hourlyWage)} / hr
                   </Text>
                 </View>
               </View>
               <Divider />
               <View style={styles.deptStats}>
                 <View style={styles.stat}>
-                  <Text style={styles.statLabel}>Giờ / tháng</Text>
+                  <Text style={styles.statLabel}>Hours / month</Text>
                   <Text style={styles.statValue}>{dept.hoursPerMonth}h</Text>
                 </View>
                 <View style={styles.stat}>
-                  <Text style={styles.statLabel}>Lương / tháng</Text>
+                  <Text style={styles.statLabel}>Wages / month</Text>
                   <Text style={styles.statValue}>
                     {formatCurrency(dept.hourlyWage * dept.hoursPerMonth)}
                   </Text>
                 </View>
                 <View style={styles.stat}>
-                  <Text style={styles.statLabel}>Lương / phút</Text>
+                  <Text style={styles.statLabel}>Cost / min</Text>
                   <Text style={styles.statValue}>
                     {formatCurrency(dept.hourlyWage / 60)}
                   </Text>
@@ -156,13 +156,13 @@ export default function StaffScreen() {
               </View>
               <View style={styles.deptActions}>
                 <Button
-                  label="Sửa"
+                  label="Edit"
                   variant="outline"
                   onPress={() => openEdit(dept)}
                   style={styles.actionBtn}
                 />
                 <Button
-                  label="Xóa"
+                  label="Delete"
                   variant="danger"
                   onPress={() => handleDelete(dept)}
                   style={styles.actionBtn}
@@ -178,38 +178,38 @@ export default function StaffScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
             <Text style={styles.modalTitle}>
-              {editing ? 'Cập nhật bộ phận' : 'Thêm bộ phận'}
+              {editing ? 'Update Department' : 'Add Department'}
             </Text>
             <Input
-              label="Tên bộ phận"
+              label="Department Name"
               value={form.name}
               onChangeText={v => setForm(f => ({ ...f, name: v }))}
-              placeholder="VD: Bếp chính, Phục vụ..."
+              placeholder="e.g. Head Chef, Server, Cashier..."
               error={errors.name}
             />
             <Input
-              label="Lương theo giờ"
+              label="Hourly Wage"
               value={form.hourlyWage}
               onChangeText={v => setForm(f => ({ ...f, hourlyWage: v }))}
-              placeholder="VD: 50000"
+              placeholder="e.g. 18.00"
               keyboardType="numeric"
               right="$/hr"
               error={errors.hourlyWage}
             />
             <Input
-              label="Số giờ làm / tháng"
+              label="Hours / Month"
               value={form.hoursPerMonth}
               onChangeText={v => setForm(f => ({ ...f, hoursPerMonth: v }))}
-              placeholder="VD: 208"
+              placeholder="e.g. 173"
               keyboardType="numeric"
-              right="giờ"
+              right="hrs"
               error={errors.hoursPerMonth}
             />
             {form.hourlyWage && form.hoursPerMonth &&
               !isNaN(Number(form.hourlyWage)) &&
               !isNaN(Number(form.hoursPerMonth)) && (
               <View style={styles.preview}>
-                <Text style={styles.previewLabel}>Lương / tháng dự kiến:</Text>
+                <Text style={styles.previewLabel}>Estimated monthly wages:</Text>
                 <Text style={styles.previewValue}>
                   {formatCurrency(Number(form.hourlyWage) * Number(form.hoursPerMonth))}
                 </Text>
@@ -217,13 +217,13 @@ export default function StaffScreen() {
             )}
             <View style={styles.modalActions}>
               <Button
-                label="Hủy"
+                label="Cancel"
                 variant="outline"
                 onPress={() => setModalVisible(false)}
                 style={{ flex: 1, marginRight: 8 }}
               />
               <Button
-                label={editing ? 'Cập nhật' : 'Thêm'}
+                label={editing ? 'Update' : 'Add'}
                 onPress={handleSave}
                 style={{ flex: 1 }}
               />

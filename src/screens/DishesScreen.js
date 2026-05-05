@@ -22,16 +22,16 @@ import {
   Divider,
 } from '../components';
 
-const DISH_CATEGORIES = ['Khai vị', 'Món chính', 'Món phụ', 'Cơm & Bún', 'Canh & Súp', 'Tráng miệng', 'Đồ uống', 'Khác'];
+const DISH_CATEGORIES = ['Appetizer', 'Main Course', 'Side Dish', 'Pasta & Rice', 'Soup', 'Dessert', 'Beverage', 'Other'];
 const CATEGORY_ICONS = {
-  'Khai vị': '🥗',
-  'Món chính': '🍖',
-  'Món phụ': '🥘',
-  'Cơm & Bún': '🍜',
-  'Canh & Súp': '🍲',
-  'Tráng miệng': '🍮',
-  'Đồ uống': '🥤',
-  'Khác': '🍽️',
+  'Appetizer': '🥗',
+  'Main Course': '🍖',
+  'Side Dish': '🥘',
+  'Pasta & Rice': '🍜',
+  'Soup': '🍲',
+  'Dessert': '🍮',
+  'Beverage': '🥤',
+  'Other': '🍽️',
 };
 
 export default function DishesScreen({ navigation }) {
@@ -58,7 +58,7 @@ export default function DishesScreen({ navigation }) {
     setEditing(null);
     setForm({
       name: '',
-      category: 'Món chính',
+      category: 'Main Course',
       description: '',
       dishIngredients: [],
       laborTime: [],
@@ -82,7 +82,7 @@ export default function DishesScreen({ navigation }) {
 
   function handleSave() {
     if (!form.name.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập tên món ăn');
+      Alert.alert('Error', 'Please enter a dish name');
       return;
     }
     const data = {
@@ -102,10 +102,10 @@ export default function DishesScreen({ navigation }) {
   }
 
   function handleDelete(dish) {
-    Alert.alert('Xóa món ăn', `Xóa "${dish.name}"?`, [
-      { text: 'Hủy', style: 'cancel' },
+    Alert.alert('Delete Dish', `Delete "${dish.name}"?`, [
+      { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Xóa',
+        text: 'Delete',
         style: 'destructive',
         onPress: () => dispatch({ type: 'DELETE_DISH', payload: dish.id }),
       },
@@ -180,8 +180,8 @@ export default function DishesScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <Header
-        title="Món ăn"
-        subtitle="Quản lý công thức và tính giá thành"
+        title="Dishes"
+        subtitle="Manage recipes and calculate food cost"
       />
       <View style={styles.searchRow}>
         <View style={styles.searchBox}>
@@ -190,7 +190,7 @@ export default function DishesScreen({ navigation }) {
             style={styles.searchInput}
             value={search}
             onChangeText={setSearch}
-            placeholder="Tìm món ăn..."
+            placeholder="Search dishes..."
             placeholderTextColor={COLORS.textLight}
           />
         </View>
@@ -205,8 +205,8 @@ export default function DishesScreen({ navigation }) {
             icon="🍽️"
             message={
               dishes.length === 0
-                ? "Chưa có món ăn nào.\nNhấn + để thêm món đầu tiên!"
-                : "Không tìm thấy món ăn"
+                ? "No dishes yet.\nTap + to add your first dish!"
+                : "No dishes found"
             }
           />
         ) : (
@@ -231,25 +231,25 @@ export default function DishesScreen({ navigation }) {
                 <Divider />
                 <View style={styles.costGrid}>
                   <View style={styles.costItem}>
-                    <Text style={styles.costLabel}>🥕 Nguyên liệu</Text>
+                    <Text style={styles.costLabel}>🥕 Ingredients</Text>
                     <Text style={styles.costVal}>{formatCurrency(cost.ingredientCost)}</Text>
                   </View>
                   <View style={styles.costItem}>
-                    <Text style={styles.costLabel}>👤 Nhân công</Text>
+                    <Text style={styles.costLabel}>👤 Labor</Text>
                     <Text style={styles.costVal}>{formatCurrency(cost.laborCost)}</Text>
                   </View>
                   <View style={styles.costItem}>
-                    <Text style={styles.costLabel}>⚡ Vận hành</Text>
+                    <Text style={styles.costLabel}>⚡ Overhead</Text>
                     <Text style={styles.costVal}>{formatCurrency(cost.overheadPerDish)}</Text>
                   </View>
                   <View style={[styles.costItem, styles.costTotal]}>
-                    <Text style={styles.costTotalLabel}>Giá thành</Text>
+                    <Text style={styles.costTotalLabel}>Food Cost</Text>
                     <Text style={styles.costTotalVal}>{formatCurrency(cost.totalCost)}</Text>
                   </View>
                 </View>
                 <View style={styles.dishActions}>
                   <Button
-                    label="Tính giá menu"
+                    label="Price Menu"
                     variant="success"
                     onPress={() =>
                       navigation.navigate('Calculator', { dishId: dish.id })
@@ -257,13 +257,13 @@ export default function DishesScreen({ navigation }) {
                     style={[styles.actionBtn, { flex: 2 }]}
                   />
                   <Button
-                    label="Sửa"
+                    label="Edit"
                     variant="outline"
                     onPress={() => openEdit(dish)}
                     style={styles.actionBtn}
                   />
                   <Button
-                    label="Xóa"
+                    label="Delete"
                     variant="danger"
                     onPress={() => handleDelete(dish)}
                     style={styles.actionBtn}
@@ -282,7 +282,7 @@ export default function DishesScreen({ navigation }) {
           <View style={styles.modalBox}>
             {/* Step indicator */}
             <View style={styles.stepRow}>
-              {['Thông tin', 'Nguyên liệu', 'Nhân công'].map((s, i) => (
+              {['Info', 'Ingredients', 'Labor'].map((s, i) => (
                 <TouchableOpacity
                   key={i}
                   style={[styles.stepItem, step === i + 1 && styles.stepActive]}
@@ -304,12 +304,12 @@ export default function DishesScreen({ navigation }) {
               {step === 1 && (
                 <View>
                   <Input
-                    label="Tên món ăn *"
+                    label="Dish Name *"
                     value={form.name}
                     onChangeText={v => setForm(f => ({ ...f, name: v }))}
-                    placeholder="VD: Bò lúc lắc, Cơm tấm..."
+                    placeholder="e.g. NY Strip Steak, Caesar Salad..."
                   />
-                  <Text style={styles.pickLabel}>Danh mục</Text>
+                  <Text style={styles.pickLabel}>Category</Text>
                   <TouchableOpacity
                     style={styles.pickBtn}
                     onPress={() => setShowCategoryPicker(!showCategoryPicker)}
@@ -338,10 +338,10 @@ export default function DishesScreen({ navigation }) {
                     </View>
                   )}
                   <Input
-                    label="Ghi chú (tuỳ chọn)"
+                    label="Notes (optional)"
                     value={form.description}
                     onChangeText={v => setForm(f => ({ ...f, description: v }))}
-                    placeholder="Mô tả ngắn về món ăn..."
+                    placeholder="Short description..."
                     multiline
                   />
                 </View>
@@ -350,10 +350,10 @@ export default function DishesScreen({ navigation }) {
               {step === 2 && (
                 <View>
                   <Text style={styles.stepHint}>
-                    Nhập lượng dùng cho mỗi nguyên liệu (để trống = không dùng)
+                    Enter quantity per ingredient (leave blank = not used)
                   </Text>
                   {ingredients.length === 0 ? (
-                    <EmptyState icon="🥕" message="Chưa có nguyên liệu. Vào tab Nguyên liệu để thêm." />
+                    <EmptyState icon="🥕" message="No ingredients yet. Go to Ingredients tab to add." />
                   ) : (
                     ingredients.map(ing => (
                       <View key={ing.id} style={styles.ingFormRow}>
@@ -383,17 +383,17 @@ export default function DishesScreen({ navigation }) {
               {step === 3 && (
                 <View>
                   <Text style={styles.stepHint}>
-                    Nhập thời gian chuẩn bị món cho từng bộ phận (phút)
+                    Enter prep time per department (minutes)
                   </Text>
                   {departments.length === 0 ? (
-                    <EmptyState icon="👥" message="Chưa có bộ phận. Vào tab Nhân viên để thêm." />
+                    <EmptyState icon="👥" message="No departments yet. Go to Staff tab to add." />
                   ) : (
                     departments.map(dept => (
                       <View key={dept.id} style={styles.ingFormRow}>
                         <View style={styles.ingFormInfo}>
                           <Text style={styles.ingFormName}>{dept.name}</Text>
                           <Text style={styles.ingFormPrice}>
-                            {formatCurrency(dept.hourlyWage)}/h
+                            {formatCurrency(dept.hourlyWage)}/hr
                           </Text>
                         </View>
                         <View style={styles.ingFormInput}>
@@ -405,7 +405,7 @@ export default function DishesScreen({ navigation }) {
                             keyboardType="numeric"
                             placeholderTextColor={COLORS.textLight}
                           />
-                          <Text style={styles.qtyUnit}>phút</Text>
+                          <Text style={styles.qtyUnit}>min</Text>
                         </View>
                       </View>
                     ))
@@ -415,22 +415,22 @@ export default function DishesScreen({ navigation }) {
 
               {/* Cost preview */}
               <View style={styles.costPreview}>
-                <Text style={styles.costPreviewTitle}>💰 Chi phí dự kiến</Text>
+                <Text style={styles.costPreviewTitle}>💰 Estimated Cost</Text>
                 <View style={styles.costPreviewGrid}>
                   <View style={styles.cpItem}>
-                    <Text style={styles.cpLabel}>Nguyên liệu</Text>
+                    <Text style={styles.cpLabel}>Ingredients</Text>
                     <Text style={styles.cpVal}>{formatCurrency(previewCost.ingredientCost)}</Text>
                   </View>
                   <View style={styles.cpItem}>
-                    <Text style={styles.cpLabel}>Nhân công</Text>
+                    <Text style={styles.cpLabel}>Labor</Text>
                     <Text style={styles.cpVal}>{formatCurrency(previewCost.laborCost)}</Text>
                   </View>
                   <View style={styles.cpItem}>
-                    <Text style={styles.cpLabel}>Vận hành</Text>
+                    <Text style={styles.cpLabel}>Overhead</Text>
                     <Text style={styles.cpVal}>{formatCurrency(previewCost.overheadPerDish)}</Text>
                   </View>
                   <View style={[styles.cpItem, { borderTopWidth: 1, borderTopColor: COLORS.border }]}>
-                    <Text style={[styles.cpLabel, { fontWeight: '700' }]}>TỔNG GIẢTHÀNH</Text>
+                    <Text style={[styles.cpLabel, { fontWeight: '700' }]}>TOTAL FOOD COST</Text>
                     <Text style={[styles.cpVal, { color: COLORS.primary, fontWeight: '700', fontSize: 16 }]}>
                       {formatCurrency(previewCost.totalCost)}
                     </Text>
@@ -441,20 +441,20 @@ export default function DishesScreen({ navigation }) {
 
             <View style={styles.modalFooter}>
               <Button
-                label="Hủy"
+                label="Cancel"
                 variant="outline"
                 onPress={() => setModalVisible(false)}
                 style={{ flex: 1, marginRight: 8 }}
               />
               {step < 3 ? (
                 <Button
-                  label="Tiếp theo →"
+                  label="Next →"
                   onPress={() => setStep(s => s + 1)}
                   style={{ flex: 2 }}
                 />
               ) : (
                 <Button
-                  label={editing ? '✓ Cập nhật' : '✓ Lưu món ăn'}
+                  label={editing ? '✓ Update' : '✓ Save Dish'}
                   onPress={handleSave}
                   style={{ flex: 2 }}
                 />

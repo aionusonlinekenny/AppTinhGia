@@ -61,27 +61,27 @@ function TabNavigator() {
       <Tab.Screen
         name="Home"
         component={HomeScreen}
-        options={{ tabBarLabel: 'Tổng quan' }}
+        options={{ tabBarLabel: 'Overview' }}
       />
       <Tab.Screen
         name="Ingredients"
         component={IngredientsScreen}
-        options={{ tabBarLabel: 'Nguyên liệu' }}
+        options={{ tabBarLabel: 'Ingredients' }}
       />
       <Tab.Screen
         name="Staff"
         component={StaffScreen}
-        options={{ tabBarLabel: 'Nhân viên' }}
+        options={{ tabBarLabel: 'Staff' }}
       />
       <Tab.Screen
         name="Overhead"
         component={OverheadScreen}
-        options={{ tabBarLabel: 'Chi phí' }}
+        options={{ tabBarLabel: 'Overhead' }}
       />
       <Tab.Screen
         name="Dishes"
         component={DishesScreen}
-        options={{ tabBarLabel: 'Món ăn' }}
+        options={{ tabBarLabel: 'Dishes' }}
       />
     </Tab.Navigator>
   );
@@ -96,7 +96,7 @@ function RootNavigator() {
         component={CalculatorScreen}
         options={{
           headerShown: true,
-          title: 'Tính giá menu',
+          title: 'Menu Pricing',
           headerStyle: { backgroundColor: COLORS.primary },
           headerTintColor: '#FFF',
           headerTitleStyle: { fontWeight: '700' },

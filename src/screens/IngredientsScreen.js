@@ -23,18 +23,18 @@ import {
   Badge,
 } from '../components';
 
-const CATEGORIES = ['Thịt', 'Hải sản', 'Rau củ', 'Tinh bột', 'Gia vị', 'Sữa & Trứng', 'Đồ uống', 'Khác'];
-const UNITS = ['kg', 'g', 'lít', 'ml', 'cái', 'hộp', 'gói', 'bó', 'miếng', 'con'];
+const CATEGORIES = ['Meat', 'Seafood', 'Produce', 'Starch', 'Spices', 'Dairy & Eggs', 'Beverages', 'Other'];
+const UNITS = ['lb', 'oz', 'fl oz', 'gal', 'qt', 'pt', 'cup', 'tbsp', 'tsp', 'each', 'pack', 'box', 'bag', 'bunch', 'slice', 'count'];
 
 const CATEGORY_ICONS = {
-  'Thịt': '🥩',
-  'Hải sản': '🦐',
-  'Rau củ': '🥦',
-  'Tinh bột': '🍚',
-  'Gia vị': '🧂',
-  'Sữa & Trứng': '🥚',
-  'Đồ uống': '🥤',
-  'Khác': '📦',
+  'Meat': '🥩',
+  'Seafood': '🦐',
+  'Produce': '🥦',
+  'Starch': '🍚',
+  'Spices': '🧂',
+  'Dairy & Eggs': '🥚',
+  'Beverages': '🥤',
+  'Other': '📦',
 };
 
 export default function IngredientsScreen() {
@@ -43,30 +43,30 @@ export default function IngredientsScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [editing, setEditing] = useState(null);
   const [search, setSearch] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('Tất cả');
+  const [selectedCategory, setSelectedCategory] = useState('All');
   const [form, setForm] = useState({
     name: '',
-    unit: 'kg',
+    unit: 'lb',
     pricePerUnit: '',
-    category: 'Khác',
+    category: 'Other',
   });
   const [showUnitPicker, setShowUnitPicker] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [errors, setErrors] = useState({});
 
-  const categories = ['Tất cả', ...CATEGORIES];
+  const categories = ['All', ...CATEGORIES];
 
   const filtered = useMemo(() => {
     return ingredients.filter(i => {
       const matchSearch = i.name.toLowerCase().includes(search.toLowerCase());
-      const matchCat = selectedCategory === 'Tất cả' || i.category === selectedCategory;
+      const matchCat = selectedCategory === 'All' || i.category === selectedCategory;
       return matchSearch && matchCat;
     });
   }, [ingredients, search, selectedCategory]);
 
   function openAdd() {
     setEditing(null);
-    setForm({ name: '', unit: 'kg', pricePerUnit: '', category: 'Khác' });
+    setForm({ name: '', unit: 'lb', pricePerUnit: '', category: 'Other' });
     setErrors({});
     setModalVisible(true);
   }
@@ -85,9 +85,9 @@ export default function IngredientsScreen() {
 
   function validate() {
     const errs = {};
-    if (!form.name.trim()) errs.name = 'Nhập tên nguyên liệu';
+    if (!form.name.trim()) errs.name = 'Enter ingredient name';
     if (!form.pricePerUnit || isNaN(Number(form.pricePerUnit)) || Number(form.pricePerUnit) <= 0)
-      errs.pricePerUnit = 'Giá phải là số dương';
+      errs.pricePerUnit = 'Price must be a positive number';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -110,8 +110,8 @@ export default function IngredientsScreen() {
   }
 
   function handleDelete(ing) {
-    Alert.alert('Xóa nguyên liệu', `Xóa "${ing.name}"?`, [
-      { text: 'Hủy', style: 'cancel' },
+    Alert.alert('Delete Ingredient', `Delete "${ing.name}"?`, [
+      { text: 'Cancel', style: 'cancel' },
       {
         text: 'Xóa',
         style: 'destructive',
@@ -121,7 +121,7 @@ export default function IngredientsScreen() {
   }
 
   const groupedByCategory = useMemo(() => {
-    if (selectedCategory !== 'Tất cả') return null;
+    if (selectedCategory !== 'All') return null;
     const groups = {};
     filtered.forEach(i => {
       if (!groups[i.category]) groups[i.category] = [];
@@ -155,8 +155,8 @@ export default function IngredientsScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <Header
-        title="Nguyên liệu & Supplies"
-        subtitle="Quản lý giá nguyên liệu theo đơn vị"
+        title="Ingredients & Supplies"
+        subtitle="Manage ingredient prices by unit"
       />
       <View style={styles.searchRow}>
         <View style={styles.searchBox}>
@@ -165,7 +165,7 @@ export default function IngredientsScreen() {
             style={styles.searchInput}
             value={search}
             onChangeText={setSearch}
-            placeholder="Tìm nguyên liệu..."
+            placeholder="Search ingredients..."
             placeholderTextColor={COLORS.textLight}
           />
           {search ? (
@@ -200,7 +200,7 @@ export default function IngredientsScreen() {
                 selectedCategory === cat && styles.catChipTextActive,
               ]}
             >
-              {cat === 'Tất cả' ? '🗂️ Tất cả' : `${CATEGORY_ICONS[cat]} ${cat}`}
+              {cat === 'All' ? '🗂️ All' : `${CATEGORY_ICONS[cat]} ${cat}`}
             </Text>
           </TouchableOpacity>
         ))}
@@ -208,8 +208,8 @@ export default function IngredientsScreen() {
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {filtered.length === 0 ? (
-          <EmptyState icon="🥕" message="Không tìm thấy nguyên liệu nào" />
-        ) : selectedCategory === 'Tất cả' && groupedByCategory ? (
+          <EmptyState icon="🥕" message="No ingredients found" />
+        ) : selectedCategory === 'All' && groupedByCategory ? (
           Object.entries(groupedByCategory).map(([cat, items]) => (
             <Card key={cat}>
               <Text style={styles.groupTitle}>
@@ -230,26 +230,26 @@ export default function IngredientsScreen() {
           <ScrollView>
             <View style={styles.modalBox}>
               <Text style={styles.modalTitle}>
-                {editing ? 'Cập nhật nguyên liệu' : 'Thêm nguyên liệu'}
+                {editing ? 'Update Ingredient' : 'Add Ingredient'}
               </Text>
               <Input
-                label="Tên nguyên liệu"
+                label="Ingredient Name"
                 value={form.name}
                 onChangeText={v => setForm(f => ({ ...f, name: v }))}
-                placeholder="VD: Thịt bò, Cà chua..."
+                placeholder="e.g. Beef, Tomato, Butter..."
                 error={errors.name}
               />
               <Input
-                label="Giá / đơn vị"
+                label="Price / unit"
                 value={form.pricePerUnit}
                 onChangeText={v => setForm(f => ({ ...f, pricePerUnit: v }))}
-                placeholder="VD: 280000"
+                placeholder="e.g. 8.99"
                 keyboardType="numeric"
                 right="$"
                 error={errors.pricePerUnit}
               />
 
-              <Text style={styles.pickLabel}>Đơn vị tính</Text>
+              <Text style={styles.pickLabel}>Unit</Text>
               <TouchableOpacity
                 style={styles.pickBtn}
                 onPress={() => setShowUnitPicker(!showUnitPicker)}
@@ -276,7 +276,7 @@ export default function IngredientsScreen() {
                 </View>
               )}
 
-              <Text style={[styles.pickLabel, { marginTop: 12 }]}>Danh mục</Text>
+              <Text style={[styles.pickLabel, { marginTop: 12 }]}>Category</Text>
               <TouchableOpacity
                 style={styles.pickBtn}
                 onPress={() => setShowCategoryPicker(!showCategoryPicker)}

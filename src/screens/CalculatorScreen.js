@@ -48,15 +48,15 @@ export default function CalculatorScreen({ route }) {
   async function handleShare() {
     if (!selectedDish || !cost) return;
     const lines = [
-      `📊 BÁO GIÁ: ${selectedDish.name}`,
+      `📊 PRICE REPORT: ${selectedDish.name}`,
       '',
-      '─── CHI PHÍ ───',
-      `🥕 Nguyên liệu:  ${formatCurrency(cost.ingredientCost)}`,
-      `👤 Nhân công:    ${formatCurrency(cost.laborCost)}`,
-      `⚡ Vận hành:     ${formatCurrency(cost.overheadPerDish)}`,
-      `💰 Giá thành:    ${formatCurrency(cost.totalCost)}`,
+      '─── COST BREAKDOWN ───',
+      `🥕 Ingredients:  ${formatCurrency(cost.ingredientCost)}`,
+      `👤 Labor:        ${formatCurrency(cost.laborCost)}`,
+      `⚡ Overhead:     ${formatCurrency(cost.overheadPerDish)}`,
+      `💰 Total Cost:   ${formatCurrency(cost.totalCost)}`,
       '',
-      '─── GỢI Ý GIÁ MENU ───',
+      '─── SUGGESTED MENU PRICES ───',
       ...suggestions.map(s => `${s.label}: ${formatCurrency(s.price)}`),
     ];
     await Share.share({ message: lines.join('\n') });
@@ -72,15 +72,15 @@ export default function CalculatorScreen({ route }) {
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <Header
-        title="Tính giá menu"
-        subtitle="Phân tích giá thành và gợi ý giá bán"
+        title="Menu Pricing"
+        subtitle="Cost breakdown and suggested menu prices"
       />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Dish selector */}
         <Card>
-          <Text style={styles.sectionTitle}>📌 Chọn món ăn</Text>
+          <Text style={styles.sectionTitle}>📌 Select Dish</Text>
           {dishes.length === 0 ? (
-            <EmptyState icon="🍽️" message="Chưa có món ăn. Vào tab Món ăn để thêm." />
+            <EmptyState icon="🍽️" message="No dishes yet. Go to Dishes tab to add one." />
           ) : (
             <>
               {selectedDish && (
@@ -94,7 +94,7 @@ export default function CalculatorScreen({ route }) {
                     onPress={() => { setSelectedDishId(null); setShowAllDishes(true); }}
                     style={styles.changeBtn}
                   >
-                    <Text style={styles.changeBtnText}>Đổi</Text>
+                    <Text style={styles.changeBtnText}>Change</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -130,12 +130,12 @@ export default function CalculatorScreen({ route }) {
         {cost && (
           <>
             <Card style={styles.costCard}>
-              <Text style={styles.sectionTitle}>💰 Phân tích chi phí</Text>
+              <Text style={styles.sectionTitle}>💰 Cost Breakdown</Text>
               <Divider />
 
               <View style={styles.costRow}>
                 <View style={[styles.costBar, { backgroundColor: '#FF8A80' }]}>
-                  <Text style={styles.costBarLabel}>🥕 Nguyên liệu</Text>
+                  <Text style={styles.costBarLabel}>🥕 Ingredients</Text>
                   <Text style={styles.costBarValue}>{formatCurrency(cost.ingredientCost)}</Text>
                   <Text style={styles.costBarPct}>
                     {cost.totalCost > 0
@@ -147,7 +147,7 @@ export default function CalculatorScreen({ route }) {
 
               <View style={styles.costRow}>
                 <View style={[styles.costBar, { backgroundColor: '#82B1FF' }]}>
-                  <Text style={styles.costBarLabel}>👤 Nhân công</Text>
+                  <Text style={styles.costBarLabel}>👤 Labor</Text>
                   <Text style={styles.costBarValue}>{formatCurrency(cost.laborCost)}</Text>
                   <Text style={styles.costBarPct}>
                     {cost.totalCost > 0
@@ -159,7 +159,7 @@ export default function CalculatorScreen({ route }) {
 
               <View style={styles.costRow}>
                 <View style={[styles.costBar, { backgroundColor: '#FFFF8D' }]}>
-                  <Text style={styles.costBarLabel}>⚡ Vận hành</Text>
+                  <Text style={styles.costBarLabel}>⚡ Overhead</Text>
                   <Text style={styles.costBarValue}>{formatCurrency(cost.overheadPerDish)}</Text>
                   <Text style={styles.costBarPct}>
                     {cost.totalCost > 0
@@ -170,13 +170,13 @@ export default function CalculatorScreen({ route }) {
               </View>
 
               <View style={styles.totalRow}>
-                <Text style={styles.totalLabel}>TỔNG GIÁ THÀNH (COST)</Text>
+                <Text style={styles.totalLabel}>TOTAL FOOD COST</Text>
                 <Text style={styles.totalValue}>{formatCurrency(cost.totalCost)}</Text>
               </View>
             </Card>
 
             {/* Price suggestions */}
-            <Text style={styles.suggestTitle}>🏷️ Gợi ý giá trên menu</Text>
+            <Text style={styles.suggestTitle}>🏷️ Suggested Menu Prices</Text>
             {suggestions.map((s, i) => {
               const col = PROFIT_COLORS[i];
               const rounded = roundPrice(s.price);
@@ -192,7 +192,7 @@ export default function CalculatorScreen({ route }) {
                     <View>
                       <Text style={[styles.priceLabel, { color: col.text }]}>{s.label}</Text>
                       <Text style={styles.priceNote}>
-                        Lãi: {formatCurrency(s.price - cost.totalCost)}
+                        Profit: {formatCurrency(s.price - cost.totalCost)}
                       </Text>
                     </View>
                   </View>
@@ -212,10 +212,10 @@ export default function CalculatorScreen({ route }) {
 
             {/* Custom profit */}
             <Card>
-              <Text style={styles.sectionTitle}>🎯 Tính giá theo % tùy chỉnh</Text>
+              <Text style={styles.sectionTitle}>🎯 Custom Profit %</Text>
               <View style={styles.customRow}>
                 <View style={styles.customInputBox}>
-                  <Text style={styles.customPrefix}>Lãi</Text>
+                  <Text style={styles.customPrefix}>Profit</Text>
                   <View style={styles.customInput}>
                     <Text
                       style={styles.customInputText}
@@ -245,14 +245,14 @@ export default function CalculatorScreen({ route }) {
               {customPrice !== null && (
                 <View style={styles.customResult}>
                   <Text style={styles.customResultLabel}>
-                    Giá bán với lãi {customProfitInput}%:
+                    Menu price at {customProfitInput}% profit:
                   </Text>
                   <Text style={styles.customResultValue}>{formatCurrency(customPrice)}</Text>
                   <Text style={styles.customResultRounded}>
-                    Làm tròn: {formatCurrency(roundPrice(customPrice))}
+                    Rounded: {formatCurrency(roundPrice(customPrice))}
                   </Text>
                   <Text style={styles.customResultProfit}>
-                    Lợi nhuận: {formatCurrency(customPrice - cost.totalCost)} / món
+                    Profit: {formatCurrency(customPrice - cost.totalCost)} / dish
                   </Text>
                 </View>
               )}
@@ -261,7 +261,7 @@ export default function CalculatorScreen({ route }) {
             {/* Ingredient detail */}
             {selectedDish?.ingredients?.length > 0 && (
               <Card>
-                <Text style={styles.sectionTitle}>📋 Chi tiết nguyên liệu</Text>
+                <Text style={styles.sectionTitle}>📋 Ingredient Detail</Text>
                 <Divider />
                 {selectedDish.ingredients.map(item => {
                   const ing = state.ingredients.find(i => i.id === item.ingredientId);
@@ -285,7 +285,7 @@ export default function CalculatorScreen({ route }) {
             {/* Labor detail */}
             {selectedDish?.laborTime?.length > 0 && (
               <Card>
-                <Text style={styles.sectionTitle}>⏱️ Chi tiết nhân công</Text>
+                <Text style={styles.sectionTitle}>⏱️ Labor Detail</Text>
                 <Divider />
                 {selectedDish.laborTime.map(item => {
                   const dept = state.departments.find(d => d.id === item.departmentId);
@@ -296,7 +296,7 @@ export default function CalculatorScreen({ route }) {
                       <View style={styles.detailInfo}>
                         <Text style={styles.detailName}>{dept.name}</Text>
                         <Text style={styles.detailQty}>
-                          {item.minutes} phút × {formatCurrency(dept.hourlyWage)}/h
+                          {item.minutes} min × {formatCurrency(dept.hourlyWage)}/hr
                         </Text>
                       </View>
                       <Text style={styles.detailCost}>{formatCurrency(itemCost)}</Text>
@@ -307,7 +307,7 @@ export default function CalculatorScreen({ route }) {
             )}
 
             <Button
-              label="📤 Chia sẻ báo giá"
+              label="📤 Share Price Report"
               onPress={handleShare}
               style={styles.shareBtn}
             />

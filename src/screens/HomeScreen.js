@@ -11,10 +11,10 @@ import { useApp, formatCurrency, calculateDishCost } from '../context/AppContext
 import { COLORS, Card, Divider } from '../components';
 
 const QUICK_ACTIONS = [
-  { icon: '👥', label: 'Nhân viên', tab: 'Staff', color: '#E3F2FD' },
-  { icon: '🥕', label: 'Nguyên liệu', tab: 'Ingredients', color: '#E8F5E9' },
-  { icon: '⚡', label: 'Chi phí', tab: 'Overhead', color: '#FFF8E1' },
-  { icon: '🍽️', label: 'Món ăn', tab: 'Dishes', color: '#FCE4EC' },
+  { icon: '👥', label: 'Staff', tab: 'Staff', color: '#E3F2FD' },
+  { icon: '🥕', label: 'Ingredients', tab: 'Ingredients', color: '#E8F5E9' },
+  { icon: '⚡', label: 'Overhead', tab: 'Overhead', color: '#FFF8E1' },
+  { icon: '🍽️', label: 'Dishes', tab: 'Dishes', color: '#FCE4EC' },
 ];
 
 export default function HomeScreen({ navigation }) {
@@ -51,9 +51,9 @@ export default function HomeScreen({ navigation }) {
       <View style={styles.headerBg}>
         <View style={styles.headerContent}>
           <View>
-            <Text style={styles.greeting}>Xin chào! 👋</Text>
+            <Text style={styles.greeting}>Welcome! 👋</Text>
             <Text style={styles.appName}>Menu Cost Pro</Text>
-            <Text style={styles.subtitle}>Tính giá thành & tối ưu lợi nhuận nhà hàng</Text>
+            <Text style={styles.subtitle}>Calculate food cost & maximize restaurant profit</Text>
           </View>
           <View style={styles.logoBox}>
             <Text style={styles.logoIcon}>🍴</Text>
@@ -64,26 +64,26 @@ export default function HomeScreen({ navigation }) {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow}>
           <View style={styles.chip}>
             <Text style={styles.chipValue}>{dishes.length}</Text>
-            <Text style={styles.chipLabel}>Món ăn</Text>
+            <Text style={styles.chipLabel}>Dishes</Text>
           </View>
           <View style={styles.chip}>
             <Text style={styles.chipValue}>{ingredients.length}</Text>
-            <Text style={styles.chipLabel}>Nguyên liệu</Text>
+            <Text style={styles.chipLabel}>Ingredients</Text>
           </View>
           <View style={styles.chip}>
             <Text style={styles.chipValue}>{departments.length}</Text>
-            <Text style={styles.chipLabel}>Bộ phận</Text>
+            <Text style={styles.chipLabel}>Departments</Text>
           </View>
           <View style={styles.chip}>
             <Text style={styles.chipValue}>{overheadCosts.length}</Text>
-            <Text style={styles.chipLabel}>Chi phí</Text>
+            <Text style={styles.chipLabel}>Costs</Text>
           </View>
         </ScrollView>
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Quick actions */}
-        <Text style={styles.sectionTitle}>⚡ Truy cập nhanh</Text>
+        <Text style={styles.sectionTitle}>⚡ Quick Access</Text>
         <View style={styles.quickGrid}>
           {QUICK_ACTIONS.map(action => (
             <TouchableOpacity
@@ -99,35 +99,35 @@ export default function HomeScreen({ navigation }) {
         </View>
 
         {/* Financial overview */}
-        <Text style={styles.sectionTitle}>📊 Tổng quan tài chính tháng này</Text>
+        <Text style={styles.sectionTitle}>📊 Monthly Financial Overview</Text>
         <Card>
           <View style={styles.finRow}>
             <View style={styles.finItem}>
               <Text style={styles.finIcon}>💼</Text>
-              <Text style={styles.finLabel}>Tổng lương</Text>
+              <Text style={styles.finLabel}>Total Wages</Text>
               <Text style={styles.finValue}>{formatCurrency(totalMonthlyWages)}</Text>
             </View>
             <View style={styles.finDivider} />
             <View style={styles.finItem}>
               <Text style={styles.finIcon}>🏭</Text>
-              <Text style={styles.finLabel}>Chi phí vận hành</Text>
+              <Text style={styles.finLabel}>Overhead Costs</Text>
               <Text style={styles.finValue}>{formatCurrency(totalMonthlyOverhead)}</Text>
             </View>
           </View>
           <Divider />
           <View style={styles.totalFixed}>
             <Text style={styles.totalFixedLabel}>
-              Tổng chi phí cố định / tháng
+              Total Fixed Costs / month
             </Text>
             <Text style={styles.totalFixedValue}>{formatCurrency(totalFixed)}</Text>
           </View>
           <View style={styles.perDishRow}>
             <Text style={styles.perDishLabel}>
-              📅 {settings.workingDaysPerMonth} ngày/tháng ·
-              🍽️ {settings.totalDishesPerDay} món/ngày
+              📅 {settings.workingDaysPerMonth} days/mo ·
+              🍽️ {settings.totalDishesPerDay} dishes/day
             </Text>
             <Text style={styles.perDishValue}>
-              Chi phí / món: {formatCurrency(
+              Overhead / dish: {formatCurrency(
                 (settings.workingDaysPerMonth * settings.totalDishesPerDay) > 0
                   ? totalFixed / (settings.workingDaysPerMonth * settings.totalDishesPerDay)
                   : 0
@@ -139,16 +139,16 @@ export default function HomeScreen({ navigation }) {
         {/* Dish insights */}
         {dishes.length > 0 && (
           <>
-            <Text style={styles.sectionTitle}>🔍 Phân tích món ăn</Text>
+            <Text style={styles.sectionTitle}>🔍 Dish Insights</Text>
             <View style={styles.insightRow}>
               <Card style={styles.insightCard}>
                 <Text style={styles.insightIcon}>📈</Text>
-                <Text style={styles.insightLabel}>Giá thành TB</Text>
+                <Text style={styles.insightLabel}>Avg Cost</Text>
                 <Text style={styles.insightValue}>{formatCurrency(avgCost)}</Text>
               </Card>
               <Card style={styles.insightCard}>
                 <Text style={styles.insightIcon}>💸</Text>
-                <Text style={styles.insightLabel}>Đắt nhất</Text>
+                <Text style={styles.insightLabel}>Most Expensive</Text>
                 <Text style={styles.insightValue}>
                   {mostExpensive ? formatCurrency(mostExpensive.cost.totalCost) : '-'}
                 </Text>
@@ -158,7 +158,7 @@ export default function HomeScreen({ navigation }) {
               </Card>
               <Card style={styles.insightCard}>
                 <Text style={styles.insightIcon}>🪙</Text>
-                <Text style={styles.insightLabel}>Rẻ nhất</Text>
+                <Text style={styles.insightLabel}>Cheapest</Text>
                 <Text style={styles.insightValue}>
                   {cheapest ? formatCurrency(cheapest.cost.totalCost) : '-'}
                 </Text>
@@ -173,7 +173,7 @@ export default function HomeScreen({ navigation }) {
         {/* Dish list preview */}
         {dishes.length > 0 && (
           <>
-            <Text style={styles.sectionTitle}>🍽️ Danh sách giá thành</Text>
+            <Text style={styles.sectionTitle}>🍽️ Dish Cost List</Text>
             <Card>
               {dishCosts.slice(0, 5).map((dc, i) => (
                 <TouchableOpacity
@@ -204,7 +204,7 @@ export default function HomeScreen({ navigation }) {
                   onPress={() => navigation.navigate('Dishes')}
                 >
                   <Text style={styles.viewAllText}>
-                    Xem tất cả {dishes.length} món →
+                    View all {dishes.length} dishes →
                   </Text>
                 </TouchableOpacity>
               )}
@@ -215,15 +215,15 @@ export default function HomeScreen({ navigation }) {
         {/* Getting started */}
         {dishes.length === 0 && (
           <Card style={styles.startCard}>
-            <Text style={styles.startTitle}>🚀 Bắt đầu ngay</Text>
+            <Text style={styles.startTitle}>🚀 Get Started</Text>
             <Text style={styles.startDesc}>
-              Để tính giá thành chính xác cho từng món, hãy hoàn thành các bước sau:
+              Complete these steps to accurately calculate food cost per dish:
             </Text>
             {[
-              { done: departments.length > 0, text: 'Nhập lương nhân viên theo bộ phận' },
-              { done: ingredients.length > 0, text: 'Thêm nguyên liệu và giá' },
-              { done: overheadCosts.length > 0, text: 'Nhập chi phí điện nước, gas...' },
-              { done: dishes.length > 0, text: 'Tạo công thức cho từng món ăn' },
+              { done: departments.length > 0, text: 'Enter staff wages by department' },
+              { done: ingredients.length > 0, text: 'Add ingredients and prices' },
+              { done: overheadCosts.length > 0, text: 'Enter overhead costs (electricity, rent...)' },
+              { done: dishes.length > 0, text: 'Create recipes for each dish' },
             ].map((step, i) => (
               <View key={i} style={styles.startStep}>
                 <Text style={[styles.startStepIcon, step.done && styles.stepDone]}>

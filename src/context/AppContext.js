@@ -11,9 +11,9 @@ const initialState = {
     { id: '4', name: 'Cashier', hourlyWage: 14, hoursPerMonth: 173 },
   ],
   ingredients: [
-    { id: '1', name: 'Beef', unit: 'lb', pricePerUnit: 8.99, category: 'Thịt' },
-    { id: '2', name: 'Mixed Greens', unit: 'lb', pricePerUnit: 3.49, category: 'Rau củ' },
-    { id: '3', name: 'Rice', unit: 'lb', pricePerUnit: 1.29, category: 'Tinh bột' },
+    { id: '1', name: 'Beef', unit: 'lb', pricePerUnit: 8.99, category: 'Meat' },
+    { id: '2', name: 'Mixed Greens', unit: 'lb', pricePerUnit: 3.49, category: 'Produce' },
+    { id: '3', name: 'Rice', unit: 'lb', pricePerUnit: 1.29, category: 'Starch' },
   ],
   overheadCosts: [
     { id: '1', name: 'Electricity', type: 'electricity', monthlyCost: 800 },
@@ -175,11 +175,11 @@ export function calculateDishCost(dish, state) {
 
 export function suggestPrices(totalCost) {
   return [
-    { label: 'Lãi 30%', percentage: 30, price: totalCost / 0.7 },
-    { label: 'Lãi 40%', percentage: 40, price: totalCost / 0.6 },
-    { label: 'Lãi 50%', percentage: 50, price: totalCost / 0.5 },
-    { label: 'Lãi 60%', percentage: 60, price: totalCost / 0.4 },
-    { label: 'Lãi 70%', percentage: 70, price: totalCost / 0.3 },
+    { label: '30% Profit', percentage: 30, price: totalCost / 0.7 },
+    { label: '40% Profit', percentage: 40, price: totalCost / 0.6 },
+    { label: '50% Profit', percentage: 50, price: totalCost / 0.5 },
+    { label: '60% Profit', percentage: 60, price: totalCost / 0.4 },
+    { label: '70% Profit', percentage: 70, price: totalCost / 0.3 },
   ];
 }
 

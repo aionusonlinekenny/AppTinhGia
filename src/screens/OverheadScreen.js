@@ -22,14 +22,14 @@ import {
 } from '../components';
 
 const COST_TYPES = [
-  { key: 'electricity', label: 'Điện', icon: '⚡', color: '#FFF9C4', border: '#F9A825' },
-  { key: 'water', label: 'Nước', icon: '💧', color: '#E1F5FE', border: '#0288D1' },
+  { key: 'electricity', label: 'Electricity', icon: '⚡', color: '#FFF9C4', border: '#F9A825' },
+  { key: 'water', label: 'Water', icon: '💧', color: '#E1F5FE', border: '#0288D1' },
   { key: 'gas', label: 'Gas', icon: '🔥', color: '#FBE9E7', border: '#E64A19' },
-  { key: 'rent', label: 'Thuê mặt bằng', icon: '🏢', color: '#EDE7F6', border: '#512DA8' },
+  { key: 'rent', label: 'Rent', icon: '🏢', color: '#EDE7F6', border: '#512DA8' },
   { key: 'internet', label: 'Internet', icon: '📡', color: '#E8F5E9', border: '#388E3C' },
-  { key: 'insurance', label: 'Bảo hiểm', icon: '🛡️', color: '#F3E5F5', border: '#7B1FA2' },
-  { key: 'maintenance', label: 'Bảo trì thiết bị', icon: '🔧', color: '#FFF3E0', border: '#E65100' },
-  { key: 'other', label: 'Chi phí khác', icon: '📋', color: '#FAFAFA', border: '#9E9E9E' },
+  { key: 'insurance', label: 'Insurance', icon: '🛡️', color: '#F3E5F5', border: '#7B1FA2' },
+  { key: 'maintenance', label: 'Equipment Maintenance', icon: '🔧', color: '#FFF3E0', border: '#E65100' },
+  { key: 'other', label: 'Other', icon: '📋', color: '#FAFAFA', border: '#9E9E9E' },
 ];
 
 function getTypeInfo(key) {
@@ -84,9 +84,9 @@ export default function OverheadScreen() {
 
   function validate() {
     const errs = {};
-    if (!form.name.trim()) errs.name = 'Nhập tên chi phí';
+    if (!form.name.trim()) errs.name = 'Enter cost name';
     if (!form.monthlyCost || isNaN(Number(form.monthlyCost)) || Number(form.monthlyCost) < 0)
-      errs.monthlyCost = 'Số tiền phải là số không âm';
+      errs.monthlyCost = 'Amount must be a non-negative number';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -108,10 +108,10 @@ export default function OverheadScreen() {
   }
 
   function handleDelete(cost) {
-    Alert.alert('Xóa chi phí', `Xóa "${cost.name}"?`, [
-      { text: 'Hủy', style: 'cancel' },
+    Alert.alert('Delete Cost', `Delete "${cost.name}"?`, [
+      { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Xóa',
+        text: 'Delete',
         style: 'destructive',
         onPress: () => dispatch({ type: 'DELETE_OVERHEAD', payload: cost.id }),
       },
@@ -132,20 +132,20 @@ export default function OverheadScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <Header
-        title="Chi phí vận hành"
-        subtitle="Điện, nước, gas và các chi phí cố định hàng tháng"
+        title="Overhead Costs"
+        subtitle="Electricity, water, gas, rent and other fixed monthly costs"
       />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Summary */}
         <Card style={styles.summaryCard}>
           <View style={styles.summaryRow}>
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>Tổng / tháng</Text>
+              <Text style={styles.summaryLabel}>Total / month</Text>
               <Text style={styles.summaryValue}>{formatCurrency(totalMonthlyOverhead)}</Text>
             </View>
             <View style={styles.summaryDivider} />
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>Chi phí / món</Text>
+              <Text style={styles.summaryLabel}>Cost / dish</Text>
               <Text style={[styles.summaryValue, { color: COLORS.accent }]}>
                 {formatCurrency(overheadPerDish)}
               </Text>
@@ -154,10 +154,10 @@ export default function OverheadScreen() {
           <Divider />
           <View style={styles.settingsInfo}>
             <Text style={styles.settingsText}>
-              📅 {settings.workingDaysPerMonth} ngày/tháng · 🍽️ {settings.totalDishesPerDay} món/ngày
+              📅 {settings.workingDaysPerMonth} days/mo · 🍽️ {settings.totalDishesPerDay} dishes/day
             </Text>
             <TouchableOpacity onPress={() => setSettingsModalVisible(true)}>
-              <Text style={styles.settingsEditBtn}>Chỉnh sửa</Text>
+              <Text style={styles.settingsEditBtn}>Edit</Text>
             </TouchableOpacity>
           </View>
         </Card>
@@ -184,13 +184,13 @@ export default function OverheadScreen() {
         </View>
 
         <SectionTitle
-          text="Danh sách chi phí"
-          action="+ Thêm"
+          text="Cost Items"
+          action="+ Add"
           onAction={openAdd}
         />
 
         {overheadCosts.length === 0 ? (
-          <EmptyState icon="💡" message="Chưa có chi phí nào. Thêm chi phí điện, nước, gas..." />
+          <EmptyState icon="💡" message="No costs yet. Add electricity, water, rent, etc." />
         ) : (
           Object.entries(grouped).map(([typeKey, items]) => {
             const typeInfo = getTypeInfo(typeKey);
@@ -208,7 +208,7 @@ export default function OverheadScreen() {
                   <View key={cost.id} style={styles.costRow}>
                     <View style={styles.costInfo}>
                       <Text style={styles.costName}>{cost.name}</Text>
-                      <Text style={styles.costAmount}>{formatCurrency(cost.monthlyCost)} / tháng</Text>
+                      <Text style={styles.costAmount}>{formatCurrency(cost.monthlyCost)} / mo</Text>
                     </View>
                     <View style={styles.costActions}>
                       <TouchableOpacity onPress={() => openEdit(cost)} style={styles.iconBtn}>
@@ -232,10 +232,10 @@ export default function OverheadScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
             <Text style={styles.modalTitle}>
-              {editing ? 'Cập nhật chi phí' : 'Thêm chi phí'}
+              {editing ? 'Update Cost' : 'Add Cost'}
             </Text>
 
-            <Text style={styles.pickLabel}>Loại chi phí</Text>
+            <Text style={styles.pickLabel}>Cost Type</Text>
             <TouchableOpacity
               style={styles.pickBtn}
               onPress={() => setShowTypePicker(!showTypePicker)}
@@ -265,17 +265,17 @@ export default function OverheadScreen() {
             )}
 
             <Input
-              label="Tên chi phí"
+              label="Cost Name"
               value={form.name}
               onChangeText={v => setForm(f => ({ ...f, name: v }))}
-              placeholder="VD: Tiền điện tháng 5..."
+              placeholder="e.g. Monthly Electric Bill..."
               error={errors.name}
             />
             <Input
-              label="Số tiền / tháng"
+              label="Amount / month"
               value={form.monthlyCost}
               onChangeText={v => setForm(f => ({ ...f, monthlyCost: v }))}
-              placeholder="VD: 5000000"
+              placeholder="e.g. 800"
               keyboardType="numeric"
               right="$/mo"
               error={errors.monthlyCost}
@@ -283,13 +283,13 @@ export default function OverheadScreen() {
 
             <View style={styles.modalActions}>
               <Button
-                label="Hủy"
+                label="Cancel"
                 variant="outline"
                 onPress={() => setModalVisible(false)}
                 style={{ flex: 1, marginRight: 8 }}
               />
               <Button
-                label={editing ? 'Cập nhật' : 'Thêm'}
+                label={editing ? 'Update' : 'Add'}
                 onPress={handleSave}
                 style={{ flex: 1 }}
               />
@@ -302,29 +302,29 @@ export default function OverheadScreen() {
       <Modal visible={settingsModalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
-            <Text style={styles.modalTitle}>Cài đặt phân bổ chi phí</Text>
+            <Text style={styles.modalTitle}>Cost Allocation Settings</Text>
             <Text style={styles.settingsHint}>
-              Dùng để tính chi phí vận hành phân bổ cho mỗi món ăn
+              Used to calculate overhead cost allocated per dish
             </Text>
             <Input
-              label="Số ngày mở cửa / tháng"
+              label="Working Days / Month"
               value={settingsForm.workingDaysPerMonth}
               onChangeText={v => setSettingsForm(f => ({ ...f, workingDaysPerMonth: v }))}
               placeholder="26"
               keyboardType="numeric"
-              right="ngày"
+              right="days"
             />
             <Input
-              label="Tổng số món bán / ngày"
+              label="Total Dishes Sold / Day"
               value={settingsForm.totalDishesPerDay}
               onChangeText={v => setSettingsForm(f => ({ ...f, totalDishesPerDay: v }))}
               placeholder="100"
               keyboardType="numeric"
-              right="món"
+              right="dishes"
             />
             {settingsForm.workingDaysPerMonth && settingsForm.totalDishesPerDay && (
               <View style={styles.calcPreview}>
-                <Text style={styles.calcLabel}>Chi phí vận hành / món:</Text>
+                <Text style={styles.calcLabel}>Overhead cost per dish:</Text>
                 <Text style={styles.calcValue}>
                   {formatCurrency(
                     totalMonthlyOverhead /
@@ -336,12 +336,12 @@ export default function OverheadScreen() {
             )}
             <View style={styles.modalActions}>
               <Button
-                label="Hủy"
+                label="Cancel"
                 variant="outline"
                 onPress={() => setSettingsModalVisible(false)}
                 style={{ flex: 1, marginRight: 8 }}
               />
-              <Button label="Lưu" onPress={saveSettings} style={{ flex: 1 }} />
+              <Button label="Save" onPress={saveSettings} style={{ flex: 1 }} />
             </View>
           </View>
         </View>
