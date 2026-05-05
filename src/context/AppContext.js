@@ -22,27 +22,33 @@ const initialState = {
     { id: '4', name: 'Rent', type: 'rent', monthlyCost: 5000 },
   ],
   dishes: [],
+  // group: 'kitchen' | 'waiter'
+  // tipEligible: kitchen staff who participate in tip pool; waiters are always tip-eligible
   employees: [
-    { id: 'emp1', name: 'Huy T Pham', hourlyRate: 13.50 },
-    { id: 'emp2', name: 'Binh Van Pham', hourlyRate: 14.50 },
-    { id: 'emp3', name: 'Thi My Loi Nguyen', hourlyRate: 13.50 },
-    { id: 'emp4', name: 'Eban Linh H', hourlyRate: 10.63 },
-    { id: 'emp5', name: 'Eban Be Y', hourlyRate: 10.50 },
-    { id: 'emp6', name: 'Anh Quoc Nguyen', hourlyRate: 5.25 },
-    { id: 'emp7', name: 'Anh Quoc Ky Nguyen', hourlyRate: 5.25 },
-    { id: 'emp8', name: 'Vy T Pham', hourlyRate: 5.25 },
-    { id: 'emp9', name: 'Khoa A Huynh', hourlyRate: 5.25 },
+    { id: 'emp1', name: 'Huy T Pham',          hourlyRate: 13.50, group: 'kitchen', tipEligible: false },
+    { id: 'emp2', name: 'Binh Van Pham',        hourlyRate: 14.50, group: 'kitchen', tipEligible: false },
+    { id: 'emp3', name: 'Thi My Loi Nguyen',    hourlyRate: 13.50, group: 'kitchen', tipEligible: false },
+    { id: 'emp4', name: 'Eban Linh H',          hourlyRate: 10.63, group: 'kitchen', tipEligible: false },
+    { id: 'emp5', name: 'Eban Be Y',            hourlyRate: 10.50, group: 'kitchen', tipEligible: false },
+    { id: 'emp6', name: 'Anh Quoc Nguyen',      hourlyRate:  5.25, group: 'waiter',  tipEligible: true  },
+    { id: 'emp7', name: 'Anh Quoc Ky Nguyen',   hourlyRate:  5.25, group: 'waiter',  tipEligible: true  },
+    { id: 'emp8', name: 'Vy T Pham',            hourlyRate:  5.25, group: 'waiter',  tipEligible: true  },
+    { id: 'emp9', name: 'Khoa A Huynh',         hourlyRate:  5.25, group: 'waiter',  tipEligible: true  },
   ],
-  // { id, weekOf, employeeId, hours, rate, cashAdvance, extraCheck }
+  // payrollEntry: { id, weekOf, employeeId, hours, rate, cashAdvance, extraCheck, tips }
   // mainPay = hours * rate + cashAdvance
-  // grandTotal = mainPay + extraCheck
+  // grandTotal = mainPay + extraCheck + tips
   payrollEntries: [],
-  // { id, weekOf, ingredientId, quantity, unitCost }
-  // totalCost = quantity * unitCost
+  // supplyOrder: { id, weekOf, ingredientId, quantity, unitCost }
   supplyOrders: [],
+  // salesRecord: { id, weekOf, grossSales, taxRate, cardTips, cashTips }
+  // netSales = grossSales / (1 + taxRate/100)
+  // taxCollected = grossSales - netSales
+  salesRecords: [],
   settings: {
     workingDaysPerMonth: 26,
     totalDishesPerDay: 100,
+    salesTaxRate: 8,
   },
 };
 
@@ -59,10 +65,7 @@ function reducer(state, action) {
         ),
       };
     case 'DELETE_DEPARTMENT':
-      return {
-        ...state,
-        departments: state.departments.filter(d => d.id !== action.payload),
-      };
+      return { ...state, departments: state.departments.filter(d => d.id !== action.payload) };
 
     // Ingredients
     case 'ADD_INGREDIENT':
@@ -75,10 +78,7 @@ function reducer(state, action) {
         ),
       };
     case 'DELETE_INGREDIENT':
-      return {
-        ...state,
-        ingredients: state.ingredients.filter(i => i.id !== action.payload),
-      };
+      return { ...state, ingredients: state.ingredients.filter(i => i.id !== action.payload) };
 
     // Overhead costs
     case 'ADD_OVERHEAD':
@@ -91,10 +91,7 @@ function reducer(state, action) {
         ),
       };
     case 'DELETE_OVERHEAD':
-      return {
-        ...state,
-        overheadCosts: state.overheadCosts.filter(o => o.id !== action.payload),
-      };
+      return { ...state, overheadCosts: state.overheadCosts.filter(o => o.id !== action.payload) };
 
     // Dishes
     case 'ADD_DISH':
@@ -107,10 +104,7 @@ function reducer(state, action) {
         ),
       };
     case 'DELETE_DISH':
-      return {
-        ...state,
-        dishes: state.dishes.filter(d => d.id !== action.payload),
-      };
+      return { ...state, dishes: state.dishes.filter(d => d.id !== action.payload) };
 
     // Employees
     case 'ADD_EMPLOYEE':
@@ -140,10 +134,7 @@ function reducer(state, action) {
         ),
       };
     case 'DELETE_PAYROLL_ENTRY':
-      return {
-        ...state,
-        payrollEntries: state.payrollEntries.filter(e => e.id !== action.payload),
-      };
+      return { ...state, payrollEntries: state.payrollEntries.filter(e => e.id !== action.payload) };
 
     // Supply orders
     case 'ADD_SUPPLY_ORDER':
@@ -156,24 +147,49 @@ function reducer(state, action) {
         ),
       };
     case 'DELETE_SUPPLY_ORDER':
+      return { ...state, supplyOrders: state.supplyOrders.filter(o => o.id !== action.payload) };
+
+    // Sales records
+    case 'ADD_SALES_RECORD':
+      return { ...state, salesRecords: [...state.salesRecords, action.payload] };
+    case 'UPDATE_SALES_RECORD':
       return {
         ...state,
-        supplyOrders: state.supplyOrders.filter(o => o.id !== action.payload),
+        salesRecords: state.salesRecords.map(r =>
+          r.id === action.payload.id ? action.payload : r
+        ),
       };
+    case 'DELETE_SALES_RECORD':
+      return { ...state, salesRecords: state.salesRecords.filter(r => r.id !== action.payload) };
 
     // Settings
     case 'UPDATE_SETTINGS':
       return { ...state, settings: { ...state.settings, ...action.payload } };
 
-    case 'LOAD_STATE':
+    case 'LOAD_STATE': {
+      const loaded = action.payload;
       return {
         ...initialState,
-        ...action.payload,
-        // Migrate: ensure new fields exist if loading old stored state
-        employees: action.payload.employees || initialState.employees,
-        payrollEntries: action.payload.payrollEntries || [],
-        supplyOrders: action.payload.supplyOrders || [],
+        ...loaded,
+        // Migrate: add group/tipEligible to employees that don't have them
+        employees: (loaded.employees || initialState.employees).map(e => ({
+          group: 'kitchen',
+          tipEligible: false,
+          ...e,
+        })),
+        // Migrate: add tips field to payroll entries that don't have it
+        payrollEntries: (loaded.payrollEntries || []).map(p => ({
+          tips: 0,
+          ...p,
+        })),
+        supplyOrders: loaded.supplyOrders || [],
+        salesRecords: loaded.salesRecords || [],
+        settings: {
+          ...initialState.settings,
+          ...(loaded.settings || {}),
+        },
       };
+    }
 
     default:
       return state;
@@ -210,23 +226,20 @@ export function useApp() {
   return ctx;
 }
 
-// Returns "YYYY-MM-DD" string for the Monday of the week containing `date`
 export function getWeekOf(date = new Date()) {
   const d = new Date(date);
-  const day = d.getDay(); // 0=Sun
+  const day = d.getDay();
   const diff = d.getDate() - day + (day === 0 ? -6 : 1);
   d.setDate(diff);
   return d.toISOString().split('T')[0];
 }
 
-// Shift a weekOf string by `delta` weeks
 export function offsetWeek(weekOf, delta) {
   const d = new Date(weekOf + 'T12:00:00');
   d.setDate(d.getDate() + delta * 7);
   return d.toISOString().split('T')[0];
 }
 
-// "May 1 – May 7" display label
 export function formatWeekRange(weekOf) {
   const start = new Date(weekOf + 'T12:00:00');
   const end = new Date(start);
@@ -235,7 +248,13 @@ export function formatWeekRange(weekOf) {
   return `${fmt(start)} – ${fmt(end)}`;
 }
 
-// Calculate total cost for a dish
+// grossSales includes sales tax; taxRate is a percentage (e.g. 8)
+export function calcSalesBreakdown(grossSales, taxRate = 8) {
+  const net = grossSales / (1 + taxRate / 100);
+  const tax = grossSales - net;
+  return { netSales: net, taxCollected: tax };
+}
+
 export function calculateDishCost(dish, state) {
   const { ingredients, departments, overheadCosts, settings } = state;
 
@@ -251,16 +270,11 @@ export function calculateDishCost(dish, state) {
     if (dept) laborCost += (dept.hourlyWage / 60) * item.minutes;
   }
 
-  const totalMonthlyOverhead = overheadCosts.reduce(
-    (sum, o) => sum + o.monthlyCost, 0
-  );
-  const totalDishesPerMonth =
-    settings.workingDaysPerMonth * settings.totalDishesPerDay;
-  const overheadPerDish =
-    totalDishesPerMonth > 0 ? totalMonthlyOverhead / totalDishesPerMonth : 0;
+  const totalMonthlyOverhead = overheadCosts.reduce((sum, o) => sum + o.monthlyCost, 0);
+  const totalDishesPerMonth = settings.workingDaysPerMonth * settings.totalDishesPerDay;
+  const overheadPerDish = totalDishesPerMonth > 0 ? totalMonthlyOverhead / totalDishesPerMonth : 0;
 
   const totalCost = ingredientCost + laborCost + overheadPerDish;
-
   return { ingredientCost, laborCost, overheadPerDish, totalCost };
 }
 
