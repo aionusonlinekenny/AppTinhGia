@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "Menu Cost Pro",
+    "slug": "menu-cost-pro",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#E65100"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.restaurant.menucostpro"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#E65100"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.restaurant.menucostpro",
+      "versionCode": 1
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": []
+  }
+}
