@@ -277,7 +277,7 @@ export default function OverheadScreen() {
               onChangeText={v => setForm(f => ({ ...f, monthlyCost: v }))}
               placeholder="VD: 5000000"
               keyboardType="numeric"
-              right="₫/tháng"
+              right="$/mo"
               error={errors.monthlyCost}
             />
 

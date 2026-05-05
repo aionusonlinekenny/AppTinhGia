@@ -245,7 +245,7 @@ export default function IngredientsScreen() {
                 onChangeText={v => setForm(f => ({ ...f, pricePerUnit: v }))}
                 placeholder="VD: 280000"
                 keyboardType="numeric"
-                right="₫"
+                right="$"
                 error={errors.pricePerUnit}
               />
 

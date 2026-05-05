@@ -193,7 +193,7 @@ export default function StaffScreen() {
               onChangeText={v => setForm(f => ({ ...f, hourlyWage: v }))}
               placeholder="VD: 50000"
               keyboardType="numeric"
-              right="₫/h"
+              right="$/hr"
               error={errors.hourlyWage}
             />
             <Input

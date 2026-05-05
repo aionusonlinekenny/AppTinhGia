@@ -5,21 +5,21 @@ const AppContext = createContext(null);
 
 const initialState = {
   departments: [
-    { id: '1', name: 'Bếp chính', hourlyWage: 50000, hoursPerMonth: 208 },
-    { id: '2', name: 'Phụ bếp', hourlyWage: 35000, hoursPerMonth: 208 },
-    { id: '3', name: 'Phục vụ', hourlyWage: 30000, hoursPerMonth: 208 },
-    { id: '4', name: 'Thu ngân', hourlyWage: 35000, hoursPerMonth: 208 },
+    { id: '1', name: 'Head Chef', hourlyWage: 25, hoursPerMonth: 173 },
+    { id: '2', name: 'Sous Chef', hourlyWage: 18, hoursPerMonth: 173 },
+    { id: '3', name: 'Server', hourlyWage: 12, hoursPerMonth: 173 },
+    { id: '4', name: 'Cashier', hourlyWage: 14, hoursPerMonth: 173 },
   ],
   ingredients: [
-    { id: '1', name: 'Thịt bò', unit: 'kg', pricePerUnit: 280000, category: 'Thịt' },
-    { id: '2', name: 'Rau cải', unit: 'kg', pricePerUnit: 15000, category: 'Rau củ' },
-    { id: '3', name: 'Gạo tẻ', unit: 'kg', pricePerUnit: 18000, category: 'Tinh bột' },
+    { id: '1', name: 'Beef', unit: 'lb', pricePerUnit: 8.99, category: 'Thịt' },
+    { id: '2', name: 'Mixed Greens', unit: 'lb', pricePerUnit: 3.49, category: 'Rau củ' },
+    { id: '3', name: 'Rice', unit: 'lb', pricePerUnit: 1.29, category: 'Tinh bột' },
   ],
   overheadCosts: [
-    { id: '1', name: 'Tiền điện', type: 'electricity', monthlyCost: 5000000 },
-    { id: '2', name: 'Tiền nước', type: 'water', monthlyCost: 800000 },
-    { id: '3', name: 'Tiền gas', type: 'gas', monthlyCost: 1200000 },
-    { id: '4', name: 'Tiền thuê mặt bằng', type: 'rent', monthlyCost: 15000000 },
+    { id: '1', name: 'Electricity', type: 'electricity', monthlyCost: 800 },
+    { id: '2', name: 'Water', type: 'water', monthlyCost: 200 },
+    { id: '3', name: 'Gas', type: 'gas', monthlyCost: 350 },
+    { id: '4', name: 'Rent', type: 'rent', monthlyCost: 5000 },
   ],
   dishes: [],
   settings: {
@@ -184,11 +184,12 @@ export function suggestPrices(totalCost) {
 }
 
 export function formatCurrency(amount) {
-  return new Intl.NumberFormat('vi-VN', {
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'VND',
-    maximumFractionDigits: 0,
-  }).format(Math.round(amount));
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
 }
 
 export function generateId() {

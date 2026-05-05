@@ -63,10 +63,10 @@ export default function CalculatorScreen({ route }) {
   }
 
   function roundPrice(price) {
-    if (price < 10000) return Math.ceil(price / 500) * 500;
-    if (price < 100000) return Math.ceil(price / 1000) * 1000;
-    if (price < 500000) return Math.ceil(price / 5000) * 5000;
-    return Math.ceil(price / 10000) * 10000;
+    // Round to nearest $0.25 for USD menus
+    if (price < 10) return Math.ceil(price / 0.25) * 0.25;
+    if (price < 20) return Math.ceil(price / 0.5) * 0.5;
+    return Math.ceil(price);
   }
 
   return (
