@@ -1,6 +1,29 @@
 pluginManagement {
-  // Find node on Windows (Android Studio runs with limited PATH)
-  def nodeCmd = findNodeExecutable(rootDir)
+  // Inline node resolver — must be inside pluginManagement block
+  def nodeCmd = "node"
+  def candidates = [
+    "C:\\Program Files\\nodejs\\node.exe",
+    "C:\\Program Files (x86)\\nodejs\\node.exe",
+  ]
+  // Check local.properties for node.binary override
+  def localProps = new File(rootDir, "local.properties")
+  if (localProps.exists()) {
+    def props = new Properties()
+    localProps.withInputStream { props.load(it) }
+    def nodePath = props.getProperty("node.binary")
+    if (nodePath && new File(nodePath).exists()) {
+      nodeCmd = nodePath
+    }
+  }
+  if (nodeCmd == "node") {
+    for (candidate in candidates) {
+      try {
+        def proc = [candidate, "--version"].execute()
+        proc.waitFor()
+        if (proc.exitValue() == 0) { nodeCmd = candidate; break }
+      } catch (Exception ignored) {}
+    }
+  }
 
   def version = [nodeCmd, "-e", "console.log(require('react-native/package.json').version);"]
     .execute(null, rootDir).text.trim()
@@ -13,9 +36,10 @@ pluginManagement {
   }
 }
 
-// Helper: resolve node binary across environments (PATH, Windows common paths, local.properties)
-def findNodeExecutable(rootDir) {
-  // Check local.properties first
+plugins { id("com.facebook.react.settings") }
+
+// Resolve node for use outside pluginManagement
+def resolveNode(rootDir) {
   def localProps = new File(rootDir, "local.properties")
   if (localProps.exists()) {
     def props = new Properties()
@@ -27,12 +51,7 @@ def findNodeExecutable(rootDir) {
     "node",
     "C:\\Program Files\\nodejs\\node.exe",
     "C:\\Program Files (x86)\\nodejs\\node.exe",
-    System.getenv('APPDATA') ? "${System.getenv('APPDATA')}\\npm\\node.exe" : null,
-    System.getenv('ProgramFiles') ? "${System.getenv('ProgramFiles')}\\nodejs\\node.exe" : null,
-    System.getenv('LOCALAPPDATA') ? "${System.getenv('LOCALAPPDATA')}\\Programs\\nodejs\\node.exe" : null,
-    "/usr/local/bin/node",
-    "/usr/bin/node",
-  ].findAll { it != null }
+  ]
   for (candidate in candidates) {
     try {
       def proc = [candidate, "--version"].execute()
@@ -43,22 +62,19 @@ def findNodeExecutable(rootDir) {
   return "node"
 }
 
-plugins { id("com.facebook.react.settings") }
+def nodeCmd = resolveNode(rootDir)
 
 def getRNMinorVersion() {
-  def nodeCmd = findNodeExecutable(rootDir)
-  def version = [nodeCmd, "-e", "console.log(require('react-native/package.json').version);"]
+  def node = resolveNode(rootDir)
+  def version = [node, "-e", "console.log(require('react-native/package.json').version);"]
     .execute(null, rootDir).text.trim()
-  def coreVersion = version.split("-")[0]
-  def (major, minor, patch) = coreVersion.tokenize('.').collect { it.toInteger() }
+  def (major, minor, patch) = version.split("-")[0].tokenize('.').collect { it.toInteger() }
   return minor
 }
 
 if (getRNMinorVersion() >= 75) {
   extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
     if (System.getenv('EXPO_UNSTABLE_CORE_AUTOLINKING') == '1') {
-      println('[32mUsing expo-modules-autolinking as core autolinking source[0m')
-      def nodeCmd = findNodeExecutable(rootDir)
       def command = [
         nodeCmd, '--no-warnings', '--eval',
         'require(require.resolve(\'expo-modules-autolinking\', { paths: [require.resolve(\'expo/package.json\')] }))(process.argv.slice(1))',
@@ -72,8 +88,6 @@ if (getRNMinorVersion() >= 75) {
 }
 
 rootProject.name = 'Menu Cost Pro'
-
-def nodeCmd = findNodeExecutable(rootDir)
 
 dependencyResolutionManagement {
   versionCatalogs {
