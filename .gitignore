@@ -38,4 +38,11 @@ yarn-error.*
 
 # generated native folders
 /ios
-/android
+
+# Android - keep tracked so clone & run works
+# /android  ← intentionally included in repo
+android/local.properties
+android/.gradle/
+android/app/build/
+android/build/
+android/.idea/
