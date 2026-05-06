@@ -10,7 +10,7 @@ import {
   TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useApp, generateId, formatCurrency, calculateDishCost, calcGroupWeightedRate } from '../context/AppContext';
+import { useApp, generateId, formatCurrency, calculateDishCost, calcGroupWeightedRate, getIngredientDishUnit, getIngredientPricePerDishUnit } from '../context/AppContext';
 import {
   COLORS,
   Header,
@@ -356,7 +356,9 @@ export default function DishesScreen({ navigation }) {
                       {form.dishIngredients.map(item => {
                         const ing = ingredients.find(i => i.id === item.ingredientId);
                         if (!ing) return null;
-                        const itemCost = (parseFloat(item.quantity) || 0) * ing.pricePerUnit;
+                        const dishUnit = getIngredientDishUnit(ing);
+                        const pricePerDishUnit = getIngredientPricePerDishUnit(ing);
+                        const itemCost = (parseFloat(item.quantity) || 0) * pricePerDishUnit;
                         return (
                           <View key={item.ingredientId} style={styles.selectedIngCard}>
                             <Text style={styles.selectedIngIcon}>
@@ -365,7 +367,7 @@ export default function DishesScreen({ navigation }) {
                             <View style={styles.selectedIngInfo}>
                               <Text style={styles.selectedIngName}>{ing.name}</Text>
                               <Text style={styles.selectedIngPrice}>
-                                {formatCurrency(ing.pricePerUnit)}/{ing.unit}
+                                {formatCurrency(pricePerDishUnit)}/{dishUnit}
                               </Text>
                             </View>
                             <View style={styles.selectedIngQtyRow}>
@@ -377,7 +379,7 @@ export default function DishesScreen({ navigation }) {
                                 placeholder="0"
                                 placeholderTextColor={COLORS.textLight}
                               />
-                              <Text style={styles.selectedIngUnit}>{ing.unit}</Text>
+                              <Text style={styles.selectedIngUnit}>{dishUnit}</Text>
                             </View>
                             <Text style={styles.selectedIngCost}>{formatCurrency(itemCost)}</Text>
                             <TouchableOpacity
@@ -476,7 +478,7 @@ export default function DishesScreen({ navigation }) {
                           <View style={styles.availableIngInfo}>
                             <Text style={styles.availableIngName}>{ing.name}</Text>
                             <Text style={styles.availableIngPrice}>
-                              {formatCurrency(ing.pricePerUnit)}/{ing.unit} · {ing.category}
+                              {formatCurrency(getIngredientPricePerDishUnit(ing))}/{getIngredientDishUnit(ing)} · {ing.category}
                             </Text>
                           </View>
                           <View style={styles.addIngBtn}>

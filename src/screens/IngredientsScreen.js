@@ -17,6 +17,8 @@ import {
   getWeekOf,
   offsetWeek,
   formatWeekRange,
+  getIngredientPricePerDishUnit,
+  getIngredientDishUnit,
 } from '../context/AppContext';
 import {
   COLORS,
@@ -31,6 +33,9 @@ import {
 
 const CATEGORIES = ['Meat', 'Seafood', 'Produce', 'Starch', 'Spices', 'Dairy & Eggs', 'Beverages', 'Other'];
 const UNITS = ['lb', 'oz', 'fl oz', 'gal', 'qt', 'pt', 'cup', 'tbsp', 'tsp', 'each', 'pack', 'box', 'bag', 'bunch', 'slice', 'count'];
+const SUB_UNITS = ['lb', 'oz', 'piece', 'each'];
+const BOX_UNITS = ['box', 'bag', 'pack'];
+function isBoxUnit(unit) { return BOX_UNITS.includes((unit || '').toLowerCase()); }
 
 const CATEGORY_ICONS = {
   'Meat': '🥩',
@@ -88,9 +93,10 @@ function IngredientsTab({ ingredients, dispatch }) {
   const [editing, setEditing] = useState(null);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [form, setForm] = useState({ name: '', unit: 'lb', pricePerUnit: '', category: 'Other' });
+  const [form, setForm] = useState({ name: '', unit: 'lb', pricePerUnit: '', category: 'Other', unitsPerBox: '', subUnit: 'lb' });
   const [showUnitPicker, setShowUnitPicker] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [showSubUnitPicker, setShowSubUnitPicker] = useState(false);
   const [errors, setErrors] = useState({});
 
   const categories = ['All', ...CATEGORIES];
@@ -105,7 +111,7 @@ function IngredientsTab({ ingredients, dispatch }) {
 
   function openAdd() {
     setEditing(null);
-    setForm({ name: '', unit: 'lb', pricePerUnit: '', category: 'Other' });
+    setForm({ name: '', unit: 'lb', pricePerUnit: '', category: 'Other', unitsPerBox: '', subUnit: 'lb' });
     setErrors({});
     setModalVisible(true);
   }
@@ -117,6 +123,8 @@ function IngredientsTab({ ingredients, dispatch }) {
       unit: ing.unit,
       pricePerUnit: String(ing.pricePerUnit),
       category: ing.category,
+      unitsPerBox: ing.unitsPerBox ? String(ing.unitsPerBox) : '',
+      subUnit: ing.subUnit || 'lb',
     });
     setErrors({});
     setModalVisible(true);
@@ -127,6 +135,8 @@ function IngredientsTab({ ingredients, dispatch }) {
     if (!form.name.trim()) errs.name = 'Enter ingredient name';
     if (!form.pricePerUnit || isNaN(Number(form.pricePerUnit)) || Number(form.pricePerUnit) <= 0)
       errs.pricePerUnit = 'Price must be a positive number';
+    if (isBoxUnit(form.unit) && (!form.unitsPerBox || isNaN(Number(form.unitsPerBox)) || Number(form.unitsPerBox) <= 0))
+      errs.unitsPerBox = 'Enter how many units per box/bag';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -139,6 +149,10 @@ function IngredientsTab({ ingredients, dispatch }) {
       unit: form.unit,
       pricePerUnit: Number(form.pricePerUnit),
       category: form.category,
+      ...(isBoxUnit(form.unit) ? {
+        unitsPerBox: Number(form.unitsPerBox),
+        subUnit: form.subUnit,
+      } : { unitsPerBox: null, subUnit: null }),
     };
     dispatch({ type: editing ? 'UPDATE_INGREDIENT' : 'ADD_INGREDIENT', payload: data });
     setModalVisible(false);
@@ -166,6 +180,9 @@ function IngredientsTab({ ingredients, dispatch }) {
   }, [filtered, selectedCategory]);
 
   function renderIngredient(ing) {
+    const isBox = isBoxUnit(ing.unit);
+    const dishUnit = getIngredientDishUnit(ing);
+    const pricePerDishUnit = getIngredientPricePerDishUnit(ing);
     return (
       <View key={ing.id} style={styles.ingRow}>
         <Text style={styles.ingIcon}>{CATEGORY_ICONS[ing.category] || '📦'}</Text>
@@ -173,7 +190,13 @@ function IngredientsTab({ ingredients, dispatch }) {
           <Text style={styles.ingName}>{ing.name}</Text>
           <Text style={styles.ingPrice}>
             {formatCurrency(ing.pricePerUnit)} / {ing.unit}
+            {isBox && ing.unitsPerBox ? ` · ${ing.unitsPerBox} ${ing.subUnit || 'lb'}` : ''}
           </Text>
+          {isBox && ing.unitsPerBox ? (
+            <Text style={styles.ingSubPrice}>
+              → {formatCurrency(pricePerDishUnit)}/{dishUnit}
+            </Text>
+          ) : null}
         </View>
         <View style={styles.ingActions}>
           <TouchableOpacity onPress={() => openEdit(ing)} style={styles.iconBtn}>
@@ -291,6 +314,63 @@ function IngredientsTab({ ingredients, dispatch }) {
                       </Text>
                     </TouchableOpacity>
                   ))}
+                </View>
+              )}
+
+              {/* Box / Bag breakdown fields */}
+              {isBoxUnit(form.unit) && (
+                <View style={styles.boxSection}>
+                  <Text style={styles.boxSectionTitle}>📦 Box / Bag Breakdown</Text>
+                  <View style={styles.row2}>
+                    <View style={{ flex: 1, marginRight: 8 }}>
+                      <Input
+                        label={`How many ${form.subUnit || 'lb'} per ${form.unit}?`}
+                        value={form.unitsPerBox}
+                        onChangeText={v => setForm(f => ({ ...f, unitsPerBox: v }))}
+                        placeholder="e.g. 40"
+                        keyboardType="numeric"
+                        error={errors.unitsPerBox}
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.pickLabel}>Sub-unit</Text>
+                      <TouchableOpacity
+                        style={styles.pickBtn}
+                        onPress={() => setShowSubUnitPicker(!showSubUnitPicker)}
+                      >
+                        <Text style={styles.pickValue}>{form.subUnit}</Text>
+                        <Text style={styles.pickArrow}>▼</Text>
+                      </TouchableOpacity>
+                      {showSubUnitPicker && (
+                        <View style={styles.pickerList}>
+                          {SUB_UNITS.map(u => (
+                            <TouchableOpacity
+                              key={u}
+                              style={[styles.pickerItem, form.subUnit === u && styles.pickerItemActive]}
+                              onPress={() => { setForm(f => ({ ...f, subUnit: u })); setShowSubUnitPicker(false); }}
+                            >
+                              <Text style={[styles.pickerItemText, form.subUnit === u && styles.pickerItemTextActive]}>
+                                {u}
+                              </Text>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                  {form.pricePerUnit && form.unitsPerBox && Number(form.unitsPerBox) > 0 && (
+                    <View style={styles.boxPreview}>
+                      <Text style={styles.boxPreviewText}>
+                        1 {form.unit} = {form.unitsPerBox} {form.subUnit || 'lb'}
+                      </Text>
+                      <Text style={styles.boxPreviewText}>
+                        → {formatCurrency(Number(form.pricePerUnit) / Number(form.unitsPerBox))} / {form.subUnit || 'lb'}
+                        {(form.subUnit === 'lb') && (
+                          `  ·  ${formatCurrency(Number(form.pricePerUnit) / Number(form.unitsPerBox) / 16)} / oz`
+                        )}
+                      </Text>
+                    </View>
+                  )}
                 </View>
               )}
 
@@ -712,6 +792,7 @@ const styles = StyleSheet.create({
   ingInfo: { flex: 1 },
   ingName: { fontSize: 15, fontWeight: '600', color: COLORS.text },
   ingPrice: { fontSize: 13, color: COLORS.primary, marginTop: 2 },
+  ingSubPrice: { fontSize: 11, color: '#388E3C', marginTop: 1, fontWeight: '500' },
   ingActions: { flexDirection: 'row', gap: 4 },
   iconBtn: {
     width: 36, height: 36, alignItems: 'center', justifyContent: 'center',
@@ -837,4 +918,23 @@ const styles = StyleSheet.create({
   pickerItemText: { fontSize: 14, color: COLORS.text },
   pickerItemTextActive: { color: COLORS.primary, fontWeight: '600' },
   modalActions: { flexDirection: 'row', marginTop: 20 },
+
+  // Box/bag breakdown
+  boxSection: {
+    backgroundColor: '#FFF8E1',
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 8,
+    marginBottom: 4,
+    borderWidth: 1,
+    borderColor: '#FFD54F',
+  },
+  boxSectionTitle: { fontSize: 13, fontWeight: '700', color: '#F57F17', marginBottom: 8 },
+  boxPreview: {
+    backgroundColor: '#FFFDE7',
+    borderRadius: 8,
+    padding: 8,
+    marginTop: 4,
+  },
+  boxPreviewText: { fontSize: 12, color: '#F57F17', fontWeight: '600', lineHeight: 20 },
 });

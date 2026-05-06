@@ -234,6 +234,38 @@ export function calcSalesBreakdown(grossSales, taxRate = 8) {
   return { netSales: net, taxCollected: grossSales - net };
 }
 
+// ── Ingredient pricing helpers ───────────────────────────────────
+// Unit used when adding this ingredient to a dish (oz for weight, piece for count)
+export function getIngredientDishUnit(ing) {
+  if (!ing) return 'oz';
+  const unit = (ing.unit || '').toLowerCase();
+  if (unit === 'box' || unit === 'bag' || unit === 'pack') {
+    const sub = (ing.subUnit || 'lb').toLowerCase();
+    if (sub === 'piece' || sub === 'each') return 'piece';
+    return 'oz';
+  }
+  if (unit === 'lb' || unit === 'oz') return 'oz';
+  return unit;
+}
+
+// Effective price per dish unit ($/oz or $/piece)
+export function getIngredientPricePerDishUnit(ing) {
+  if (!ing) return 0;
+  const price = ing.pricePerUnit || 0;
+  const unit = (ing.unit || '').toLowerCase();
+  if (unit === 'lb') return price / 16;
+  if (unit === 'oz') return price;
+  if (unit === 'box' || unit === 'bag' || unit === 'pack') {
+    const perBox = ing.unitsPerBox || 1;
+    const sub = (ing.subUnit || 'lb').toLowerCase();
+    const pricePerSub = price / perBox;
+    if (sub === 'lb') return pricePerSub / 16;
+    if (sub === 'oz') return pricePerSub;
+    return pricePerSub; // piece / each
+  }
+  return price;
+}
+
 // laborTime can be:
 //   new format: { group: 'kitchen'|'waiter', minutes }  ← rate from employees
 //   old format: { departmentId, minutes }               ← rate from departments (backward compat)
@@ -243,7 +275,7 @@ export function calculateDishCost(dish, state) {
   let ingredientCost = 0;
   for (const item of dish.ingredients || []) {
     const ing = ingredients.find(i => i.id === item.ingredientId);
-    if (ing) ingredientCost += ing.pricePerUnit * item.quantity;
+    if (ing) ingredientCost += getIngredientPricePerDishUnit(ing) * item.quantity;
   }
 
   let laborCost = 0;
