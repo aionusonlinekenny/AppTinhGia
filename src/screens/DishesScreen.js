@@ -10,7 +10,7 @@ import {
   TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useApp, generateId, formatCurrency, calculateDishCost, calcGroupWeightedRate, getIngredientDishUnit, getIngredientPricePerDishUnit } from '../context/AppContext';
+import { useApp, generateId, formatCurrency, calculateDishCost, calcGroupWeightedRate, getIngredientDishUnit, getIngredientPricePerDishUnit, calculateStockCostPerOz } from '../context/AppContext';
 import {
   COLORS,
   Header,
@@ -40,7 +40,7 @@ const CATEGORY_ICONS = {
 
 export default function DishesScreen({ navigation }) {
   const { state, dispatch } = useApp();
-  const { dishes, ingredients, employees } = state;
+  const { dishes, ingredients, employees, stockRecipes = [] } = state;
   const [modalVisible, setModalVisible] = useState(false);
   const [step, setStep] = useState(1); // 1: basic info, 2: ingredients, 3: labor
   const [editing, setEditing] = useState(null);
@@ -354,20 +354,23 @@ export default function DishesScreen({ navigation }) {
                         Selected ingredients ({form.dishIngredients.length})
                       </Text>
                       {form.dishIngredients.map(item => {
-                        const ing = ingredients.find(i => i.id === item.ingredientId);
-                        if (!ing) return null;
-                        const dishUnit = getIngredientDishUnit(ing);
-                        const pricePerDishUnit = getIngredientPricePerDishUnit(ing);
+                        const isStock = item.type === 'stock';
+                        const ing = isStock ? null : ingredients.find(i => i.id === item.ingredientId);
+                        const stock = isStock ? stockRecipes.find(s => s.id === item.ingredientId) : null;
+                        if (!ing && !stock) return null;
+                        const dishUnit = isStock ? 'oz' : getIngredientDishUnit(ing);
+                        const pricePerDishUnit = isStock ? calculateStockCostPerOz(stock, state) : getIngredientPricePerDishUnit(ing);
                         const itemCost = (parseFloat(item.quantity) || 0) * pricePerDishUnit;
+                        const displayName = isStock ? stock.name : ing.name;
+                        const displayIcon = isStock ? '🍲' : (ING_CATEGORY_ICONS[ing.category] || '📦');
                         return (
                           <View key={item.ingredientId} style={styles.selectedIngCard}>
-                            <Text style={styles.selectedIngIcon}>
-                              {ING_CATEGORY_ICONS[ing.category] || '📦'}
-                            </Text>
+                            <Text style={styles.selectedIngIcon}>{displayIcon}</Text>
                             <View style={styles.selectedIngInfo}>
-                              <Text style={styles.selectedIngName}>{ing.name}</Text>
+                              <Text style={styles.selectedIngName}>{displayName}</Text>
                               <Text style={styles.selectedIngPrice}>
                                 {formatCurrency(pricePerDishUnit)}/{dishUnit}
+                                {isStock ? ' (broth)' : ''}
                               </Text>
                             </View>
                             <View style={styles.selectedIngQtyRow}>
@@ -396,8 +399,12 @@ export default function DishesScreen({ navigation }) {
                         <Text style={styles.ingSubtotalVal}>
                           {formatCurrency(
                             form.dishIngredients.reduce((sum, item) => {
+                              if (item.type === 'stock') {
+                                const s = stockRecipes.find(r => r.id === item.ingredientId);
+                                return sum + (s ? calculateStockCostPerOz(s, state) * (parseFloat(item.quantity) || 0) : 0);
+                              }
                               const ing = ingredients.find(i => i.id === item.ingredientId);
-                              return sum + (ing ? (parseFloat(item.quantity) || 0) * ing.pricePerUnit : 0);
+                              return sum + (ing ? getIngredientPricePerDishUnit(ing) * (parseFloat(item.quantity) || 0) : 0);
                             }, 0)
                           )}
                         </Text>
@@ -453,17 +460,11 @@ export default function DishesScreen({ navigation }) {
                   ) : (
                     (() => {
                       const available = ingredients
-                        .filter(ing => !form.dishIngredients.find(i => i.ingredientId === ing.id))
+                        .filter(ing => !form.dishIngredients.find(i => i.ingredientId === ing.id && i.type !== 'stock'))
                         .filter(ing => ingCategory === 'All' || ing.category === ingCategory)
                         .filter(ing => ing.name.toLowerCase().includes(ingSearch.toLowerCase()));
-                      if (available.length === 0) {
-                        return (
-                          <Text style={styles.allAddedNote}>
-                            {form.dishIngredients.length === ingredients.length
-                              ? '✓ All ingredients have been added'
-                              : 'No ingredients match your search'}
-                          </Text>
-                        );
+                      if (available.length === 0 && stockRecipes.length === 0) {
+                        return <Text style={styles.allAddedNote}>✓ All ingredients have been added</Text>;
                       }
                       return available.map(ing => (
                         <TouchableOpacity
@@ -487,6 +488,44 @@ export default function DishesScreen({ navigation }) {
                         </TouchableOpacity>
                       ));
                     })()
+                  )}
+
+                  {/* Stocks & Broths section */}
+                  {stockRecipes.length > 0 && (
+                    <View style={{ marginTop: 12 }}>
+                      <Text style={styles.sectionLabel}>Stocks & Broths</Text>
+                      {stockRecipes
+                        .filter(s => !form.dishIngredients.find(i => i.ingredientId === s.id && i.type === 'stock'))
+                        .filter(s => s.name.toLowerCase().includes(ingSearch.toLowerCase()))
+                        .map(stock => {
+                          const costPerOz = calculateStockCostPerOz(stock, state);
+                          return (
+                            <TouchableOpacity
+                              key={stock.id}
+                              style={styles.availableIngRow}
+                              onPress={() => {
+                                setForm(f => {
+                                  if (f.dishIngredients.find(i => i.ingredientId === stock.id)) return f;
+                                  return { ...f, dishIngredients: [...f.dishIngredients, { ingredientId: stock.id, type: 'stock', quantity: '' }] };
+                                });
+                              }}
+                              activeOpacity={0.7}
+                            >
+                              <Text style={styles.availableIngIcon}>🍲</Text>
+                              <View style={styles.availableIngInfo}>
+                                <Text style={styles.availableIngName}>{stock.name}</Text>
+                                <Text style={styles.availableIngPrice}>
+                                  {formatCurrency(costPerOz)}/oz · broth
+                                </Text>
+                              </View>
+                              <View style={styles.addIngBtn}>
+                                <Text style={styles.addIngBtnText}>+</Text>
+                              </View>
+                            </TouchableOpacity>
+                          );
+                        })
+                      }
+                    </View>
                   )}
                 </View>
               )}

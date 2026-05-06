@@ -60,6 +60,9 @@ const initialState = {
     { id: '4', name: 'Rent',        type: 'rent',        monthlyCost: 5000 },
   ],
   dishes: [],
+  // stockRecipes: batch broths/stocks/bases used across dishes
+  // { id, name, stockIngredients:[{ingredientId,quantity}], laborGroup, laborMinutes, yieldOz }
+  stockRecipes: [],
   // group: 'kitchen' | 'waiter'
   // schedule: { Mon|Tue|Wed|Thu|Fri|Sat|Sun: { start:'HH:MM', end:'HH:MM' } | null }
   employees: [
@@ -133,6 +136,10 @@ function reducer(state, action) {
     case 'UPDATE_OVERHEAD':   return { ...state, overheadCosts: state.overheadCosts.map(o => o.id === action.payload.id ? action.payload : o) };
     case 'DELETE_OVERHEAD':   return { ...state, overheadCosts: state.overheadCosts.filter(o => o.id !== action.payload) };
 
+    case 'ADD_STOCK_RECIPE':    return { ...state, stockRecipes: [...(state.stockRecipes||[]), action.payload] };
+    case 'UPDATE_STOCK_RECIPE': return { ...state, stockRecipes: (state.stockRecipes||[]).map(s => s.id === action.payload.id ? action.payload : s) };
+    case 'DELETE_STOCK_RECIPE': return { ...state, stockRecipes: (state.stockRecipes||[]).filter(s => s.id !== action.payload) };
+
     case 'ADD_DISH':          return { ...state, dishes: [...state.dishes, action.payload] };
     case 'UPDATE_DISH':       return { ...state, dishes: state.dishes.map(d => d.id === action.payload.id ? action.payload : d) };
     case 'DELETE_DISH':       return { ...state, dishes: state.dishes.filter(d => d.id !== action.payload) };
@@ -171,6 +178,7 @@ function reducer(state, action) {
         payrollEntries: (loaded.payrollEntries || []).map(p => ({ tips: 0, ...p })),
         supplyOrders:   loaded.supplyOrders   || [],
         salesRecords:   loaded.salesRecords   || [],
+        stockRecipes:   loaded.stockRecipes   || [],
         settings: { ...initialState.settings, ...(loaded.settings || {}) },
       };
     }
@@ -266,16 +274,38 @@ export function getIngredientPricePerDishUnit(ing) {
   return price;
 }
 
+// Cost per oz for a batch stock/broth recipe
+export function calculateStockCostPerOz(stock, state) {
+  if (!stock || !(stock.yieldOz > 0)) return 0;
+  const { ingredients = [], employees = [] } = state;
+  let ingCost = 0;
+  for (const item of stock.stockIngredients || []) {
+    const ing = ingredients.find(i => i.id === item.ingredientId);
+    if (ing) ingCost += getIngredientPricePerDishUnit(ing) * (parseFloat(item.quantity) || 0);
+  }
+  let laborCost = 0;
+  if (stock.laborMinutes && stock.laborGroup) {
+    const rate = calcGroupWeightedRate(employees, stock.laborGroup);
+    laborCost = (rate / 60) * stock.laborMinutes;
+  }
+  return (ingCost + laborCost) / stock.yieldOz;
+}
+
 // laborTime can be:
 //   new format: { group: 'kitchen'|'waiter', minutes }  ← rate from employees
 //   old format: { departmentId, minutes }               ← rate from departments (backward compat)
 export function calculateDishCost(dish, state) {
-  const { ingredients, employees = [], departments = [], overheadCosts, settings } = state;
+  const { ingredients, employees = [], departments = [], overheadCosts, settings, stockRecipes = [] } = state;
 
   let ingredientCost = 0;
   for (const item of dish.ingredients || []) {
-    const ing = ingredients.find(i => i.id === item.ingredientId);
-    if (ing) ingredientCost += getIngredientPricePerDishUnit(ing) * item.quantity;
+    if (item.type === 'stock') {
+      const stock = stockRecipes.find(s => s.id === item.ingredientId);
+      if (stock) ingredientCost += calculateStockCostPerOz(stock, state) * (parseFloat(item.quantity) || 0);
+    } else {
+      const ing = ingredients.find(i => i.id === item.ingredientId);
+      if (ing) ingredientCost += getIngredientPricePerDishUnit(ing) * (parseFloat(item.quantity) || 0);
+    }
   }
 
   let laborCost = 0;

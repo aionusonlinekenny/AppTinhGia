@@ -19,6 +19,8 @@ import {
   formatWeekRange,
   getIngredientPricePerDishUnit,
   getIngredientDishUnit,
+  calculateStockCostPerOz,
+  calcGroupWeightedRate,
 } from '../context/AppContext';
 import {
   COLORS,
@@ -48,11 +50,11 @@ const CATEGORY_ICONS = {
   'Other': '📦',
 };
 
-const TABS = ['Ingredients', 'Weekly Orders'];
+const TABS = ['Ingredients', 'Stocks & Bases', 'Weekly Orders'];
 
 export default function IngredientsScreen() {
   const { state, dispatch } = useApp();
-  const { ingredients, supplyOrders } = state;
+  const { ingredients, supplyOrders, stockRecipes = [], employees = [] } = state;
   const [activeTab, setActiveTab] = useState('Ingredients');
 
   return (
@@ -77,6 +79,9 @@ export default function IngredientsScreen() {
 
       {activeTab === 'Ingredients' && (
         <IngredientsTab ingredients={ingredients} dispatch={dispatch} />
+      )}
+      {activeTab === 'Stocks & Bases' && (
+        <StocksTab stockRecipes={stockRecipes} ingredients={ingredients} employees={employees} dispatch={dispatch} />
       )}
       {activeTab === 'Weekly Orders' && (
         <WeeklyOrdersTab ingredients={ingredients} supplyOrders={supplyOrders} dispatch={dispatch} />
@@ -410,6 +415,300 @@ function IngredientsTab({ ingredients, dispatch }) {
                   onPress={handleSave}
                   style={{ flex: 1 }}
                 />
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
+    </View>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────
+// STOCKS & BASES TAB
+// ────────────────────────────────────────────────────────────────
+function StocksTab({ stockRecipes, ingredients, employees, dispatch }) {
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [ingSearch, setIngSearch] = useState('');
+  const [form, setForm] = useState({
+    name: '',
+    stockIngredients: [],
+    laborGroup: 'kitchen',
+    laborMinutes: '',
+    yieldOz: '',
+  });
+
+  // Fake state object for calculateStockCostPerOz
+  const fakeState = { ingredients, employees };
+
+  function openAdd() {
+    setEditing(null);
+    setForm({ name: '', stockIngredients: [], laborGroup: 'kitchen', laborMinutes: '', yieldOz: '' });
+    setIngSearch('');
+    setModalVisible(true);
+  }
+
+  function openEdit(stock) {
+    setEditing(stock);
+    setForm({
+      name: stock.name,
+      stockIngredients: stock.stockIngredients.map(i => ({ ...i, quantity: String(i.quantity) })),
+      laborGroup: stock.laborGroup || 'kitchen',
+      laborMinutes: stock.laborMinutes ? String(stock.laborMinutes) : '',
+      yieldOz: String(stock.yieldOz),
+    });
+    setIngSearch('');
+    setModalVisible(true);
+  }
+
+  function handleSave() {
+    if (!form.name.trim()) { Alert.alert('Error', 'Enter a name for this stock/broth'); return; }
+    if (!form.yieldOz || Number(form.yieldOz) <= 0) { Alert.alert('Error', 'Enter the batch yield in oz'); return; }
+    const data = {
+      id: editing?.id || generateId(),
+      name: form.name.trim(),
+      stockIngredients: form.stockIngredients
+        .filter(i => parseFloat(i.quantity) > 0)
+        .map(i => ({ ...i, quantity: parseFloat(i.quantity) || 0 })),
+      laborGroup: form.laborGroup,
+      laborMinutes: parseFloat(form.laborMinutes) || 0,
+      yieldOz: parseFloat(form.yieldOz),
+    };
+    dispatch({ type: editing ? 'UPDATE_STOCK_RECIPE' : 'ADD_STOCK_RECIPE', payload: data });
+    setModalVisible(false);
+  }
+
+  function handleDelete(stock) {
+    Alert.alert('Delete', `Delete "${stock.name}"?`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => dispatch({ type: 'DELETE_STOCK_RECIPE', payload: stock.id }) },
+    ]);
+  }
+
+  function addStockIng(ingredientId) {
+    setForm(f => {
+      if (f.stockIngredients.find(i => i.ingredientId === ingredientId)) return f;
+      return { ...f, stockIngredients: [...f.stockIngredients, { ingredientId, quantity: '' }] };
+    });
+  }
+
+  function removeStockIng(ingredientId) {
+    setForm(f => ({ ...f, stockIngredients: f.stockIngredients.filter(i => i.ingredientId !== ingredientId) }));
+  }
+
+  function updateStockIngQty(ingredientId, qty) {
+    setForm(f => ({
+      ...f,
+      stockIngredients: f.stockIngredients.map(i => i.ingredientId === ingredientId ? { ...i, quantity: qty } : i),
+    }));
+  }
+
+  const previewCostPerOz = (() => {
+    const tempStock = {
+      stockIngredients: form.stockIngredients.map(i => ({ ...i, quantity: parseFloat(i.quantity) || 0 })),
+      laborGroup: form.laborGroup,
+      laborMinutes: parseFloat(form.laborMinutes) || 0,
+      yieldOz: parseFloat(form.yieldOz) || 1,
+    };
+    return calculateStockCostPerOz(tempStock, fakeState);
+  })();
+
+  const availableIngs = ingredients.filter(
+    ing => !form.stockIngredients.find(i => i.ingredientId === ing.id) &&
+      ing.name.toLowerCase().includes(ingSearch.toLowerCase())
+  );
+
+  return (
+    <View style={{ flex: 1 }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 24 }}>
+        {stockRecipes.length === 0 ? (
+          <EmptyState icon="🍲" message="No stocks or broths yet.\nTap + to define a batch recipe." />
+        ) : (
+          stockRecipes.map(stock => {
+            const costPerOz = calculateStockCostPerOz(stock, fakeState);
+            const totalCost = costPerOz * stock.yieldOz;
+            return (
+              <Card key={stock.id} style={{ marginBottom: 12 }}>
+                <View style={styles.stockHeader}>
+                  <Text style={styles.stockIcon}>🍲</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.stockName}>{stock.name}</Text>
+                    <Text style={styles.stockSub}>
+                      Yield: {stock.yieldOz} oz · {formatCurrency(costPerOz)}/oz
+                    </Text>
+                    <Text style={styles.stockSub}>
+                      Total batch cost: {formatCurrency(totalCost)}
+                    </Text>
+                  </View>
+                  <View style={styles.ingActions}>
+                    <TouchableOpacity onPress={() => openEdit(stock)} style={styles.iconBtn}>
+                      <Text style={styles.iconBtnText}>✏️</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => handleDelete(stock)} style={styles.iconBtn}>
+                      <Text style={styles.iconBtnText}>🗑️</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                <Divider />
+                {stock.stockIngredients.map(item => {
+                  const ing = ingredients.find(i => i.id === item.ingredientId);
+                  if (!ing) return null;
+                  const dishUnit = getIngredientDishUnit(ing);
+                  return (
+                    <View key={item.ingredientId} style={styles.stockIngRow}>
+                      <Text style={styles.stockIngIcon}>{CATEGORY_ICONS[ing.category] || '📦'}</Text>
+                      <Text style={styles.stockIngName}>{ing.name}</Text>
+                      <Text style={styles.stockIngQty}>{item.quantity} {dishUnit}</Text>
+                      <Text style={styles.stockIngCost}>
+                        {formatCurrency(getIngredientPricePerDishUnit(ing) * item.quantity)}
+                      </Text>
+                    </View>
+                  );
+                })}
+                {stock.laborMinutes > 0 && (
+                  <View style={styles.stockIngRow}>
+                    <Text style={styles.stockIngIcon}>👨‍🍳</Text>
+                    <Text style={styles.stockIngName}>Labor ({stock.laborGroup})</Text>
+                    <Text style={styles.stockIngQty}>{stock.laborMinutes} min</Text>
+                    <Text style={styles.stockIngCost}>
+                      {formatCurrency((calcGroupWeightedRate(employees, stock.laborGroup) / 60) * stock.laborMinutes)}
+                    </Text>
+                  </View>
+                )}
+              </Card>
+            );
+          })
+        )}
+        <TouchableOpacity style={styles.addEntryBtn} onPress={openAdd}>
+          <Text style={styles.addEntryText}>+ Add Stock / Broth</Text>
+        </TouchableOpacity>
+      </ScrollView>
+
+      <Modal visible={modalVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <ScrollView>
+            <View style={styles.modalBox}>
+              <Text style={styles.modalTitle}>{editing ? 'Edit Stock Recipe' : 'New Stock / Broth'}</Text>
+
+              <Input
+                label="Name"
+                value={form.name}
+                onChangeText={v => setForm(f => ({ ...f, name: v }))}
+                placeholder="e.g. Pho Broth, Chicken Stock..."
+              />
+
+              {/* Selected ingredients */}
+              {form.stockIngredients.length > 0 && (
+                <View style={styles.selectedSection}>
+                  <Text style={styles.sectionLabelSmall}>Ingredients in batch</Text>
+                  {form.stockIngredients.map(item => {
+                    const ing = ingredients.find(i => i.id === item.ingredientId);
+                    if (!ing) return null;
+                    const dishUnit = getIngredientDishUnit(ing);
+                    const cost = (parseFloat(item.quantity) || 0) * getIngredientPricePerDishUnit(ing);
+                    return (
+                      <View key={item.ingredientId} style={styles.selectedIngCard}>
+                        <Text style={styles.selectedIngIcon}>{CATEGORY_ICONS[ing.category] || '📦'}</Text>
+                        <View style={styles.selectedIngInfo}>
+                          <Text style={styles.selectedIngName}>{ing.name}</Text>
+                          <Text style={styles.selectedIngPrice}>{formatCurrency(getIngredientPricePerDishUnit(ing))}/{dishUnit}</Text>
+                        </View>
+                        <View style={styles.selectedIngQtyRow}>
+                          <TextInput
+                            style={styles.selectedIngQtyInput}
+                            value={item.quantity}
+                            onChangeText={v => updateStockIngQty(item.ingredientId, v)}
+                            keyboardType="numeric"
+                            placeholder="0"
+                            placeholderTextColor={COLORS.textLight}
+                          />
+                          <Text style={styles.selectedIngUnit}>{dishUnit}</Text>
+                        </View>
+                        <Text style={styles.selectedIngCost}>{formatCurrency(cost)}</Text>
+                        <TouchableOpacity onPress={() => removeStockIng(item.ingredientId)} style={styles.removeIngBtn}>
+                          <Text style={styles.removeIngBtnText}>×</Text>
+                        </TouchableOpacity>
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
+
+              {/* Add ingredient search */}
+              <Text style={styles.sectionLabelSmall}>Add ingredients</Text>
+              <View style={styles.ingSearchBox}>
+                <Text style={{ fontSize: 14 }}>🔍</Text>
+                <TextInput
+                  style={styles.ingSearchInput}
+                  value={ingSearch}
+                  onChangeText={setIngSearch}
+                  placeholder="Search..."
+                  placeholderTextColor={COLORS.textLight}
+                />
+              </View>
+              {availableIngs.slice(0, 8).map(ing => (
+                <TouchableOpacity key={ing.id} style={styles.availableIngRow} onPress={() => addStockIng(ing.id)}>
+                  <Text style={styles.availableIngIcon}>{CATEGORY_ICONS[ing.category] || '📦'}</Text>
+                  <View style={styles.availableIngInfo}>
+                    <Text style={styles.availableIngName}>{ing.name}</Text>
+                    <Text style={styles.availableIngPrice}>
+                      {formatCurrency(getIngredientPricePerDishUnit(ing))}/{getIngredientDishUnit(ing)}
+                    </Text>
+                  </View>
+                  <View style={styles.addIngBtn}>
+                    <Text style={styles.addIngBtnText}>+</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+
+              {/* Labor */}
+              <Text style={[styles.pickLabel, { marginTop: 14 }]}>Kitchen labor (cooking time)</Text>
+              <View style={styles.row2}>
+                <View style={{ flex: 1, marginRight: 8 }}>
+                  <Input
+                    label="Minutes"
+                    value={form.laborMinutes}
+                    onChangeText={v => setForm(f => ({ ...f, laborMinutes: v }))}
+                    placeholder="e.g. 240 (4hr)"
+                    keyboardType="numeric"
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.pickLabel}>Group</Text>
+                  <TouchableOpacity
+                    style={styles.pickBtn}
+                    onPress={() => setForm(f => ({ ...f, laborGroup: f.laborGroup === 'kitchen' ? 'waiter' : 'kitchen' }))}
+                  >
+                    <Text style={styles.pickValue}>{form.laborGroup === 'kitchen' ? '👨‍🍳 Kitchen' : '🍽️ Waiter'}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Yield */}
+              <Input
+                label="Batch yield (oz) — e.g. 120 liters = 4057 oz"
+                value={form.yieldOz}
+                onChangeText={v => setForm(f => ({ ...f, yieldOz: v }))}
+                placeholder="e.g. 4057"
+                keyboardType="numeric"
+              />
+
+              {/* Preview */}
+              {form.yieldOz && Number(form.yieldOz) > 0 && (
+                <View style={styles.boxPreview}>
+                  <Text style={styles.boxPreviewText}>
+                    Cost per oz: {formatCurrency(previewCostPerOz)}
+                  </Text>
+                  <Text style={styles.boxPreviewText}>
+                    Full batch ({form.yieldOz} oz): {formatCurrency(previewCostPerOz * Number(form.yieldOz))}
+                  </Text>
+                </View>
+              )}
+
+              <View style={styles.modalActions}>
+                <Button label="Cancel" variant="outline" onPress={() => setModalVisible(false)} style={{ flex: 1, marginRight: 8 }} />
+                <Button label={editing ? 'Update' : 'Save'} onPress={handleSave} style={{ flex: 1 }} />
               </View>
             </View>
           </ScrollView>
@@ -918,6 +1217,57 @@ const styles = StyleSheet.create({
   pickerItemText: { fontSize: 14, color: COLORS.text },
   pickerItemTextActive: { color: COLORS.primary, fontWeight: '600' },
   modalActions: { flexDirection: 'row', marginTop: 20 },
+
+  // Stocks tab
+  stockHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8 },
+  stockIcon: { fontSize: 28, marginRight: 10 },
+  stockName: { fontSize: 16, fontWeight: '700', color: COLORS.text },
+  stockSub: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
+  stockIngRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 5, gap: 6 },
+  stockIngIcon: { fontSize: 16, width: 22, textAlign: 'center' },
+  stockIngName: { flex: 1, fontSize: 13, color: COLORS.text },
+  stockIngQty: { fontSize: 12, color: COLORS.textSecondary, width: 70, textAlign: 'right' },
+  stockIngCost: { fontSize: 12, fontWeight: '600', color: COLORS.primary, width: 60, textAlign: 'right' },
+  sectionLabelSmall: { fontSize: 11, fontWeight: '700', color: COLORS.textSecondary, marginBottom: 6, marginTop: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
+
+  // Ingredient picker (shared with dish)
+  selectedSection: { marginBottom: 8 },
+  selectedIngCard: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#F0F9F0', borderRadius: 10, padding: 10, marginBottom: 6,
+    borderWidth: 1, borderColor: '#C8E6C9', gap: 8,
+  },
+  selectedIngIcon: { fontSize: 20 },
+  selectedIngInfo: { flex: 1 },
+  selectedIngName: { fontSize: 13, fontWeight: '600', color: COLORS.text },
+  selectedIngPrice: { fontSize: 11, color: COLORS.textSecondary },
+  selectedIngQtyRow: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#FFF', borderRadius: 6, borderWidth: 1, borderColor: COLORS.border,
+    paddingHorizontal: 6, height: 34, width: 80,
+  },
+  selectedIngQtyInput: { flex: 1, fontSize: 14, color: COLORS.text, textAlign: 'right', paddingVertical: 0 },
+  selectedIngUnit: { fontSize: 11, color: COLORS.textSecondary, marginLeft: 3 },
+  selectedIngCost: { fontSize: 12, fontWeight: '700', color: '#388E3C', width: 56, textAlign: 'right' },
+  removeIngBtn: { width: 26, height: 26, borderRadius: 13, backgroundColor: '#FFEBEE', alignItems: 'center', justifyContent: 'center' },
+  removeIngBtnText: { fontSize: 18, color: '#E53935', lineHeight: 22 },
+  ingSearchBox: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.background,
+    borderRadius: 8, borderWidth: 1, borderColor: COLORS.border,
+    paddingHorizontal: 10, height: 38, marginBottom: 8, gap: 6,
+  },
+  ingSearchInput: { flex: 1, fontSize: 14, color: COLORS.text },
+  availableIngRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 9, paddingHorizontal: 4,
+    borderBottomWidth: 1, borderBottomColor: COLORS.border, gap: 10,
+  },
+  availableIngIcon: { fontSize: 20, width: 28, textAlign: 'center' },
+  availableIngInfo: { flex: 1 },
+  availableIngName: { fontSize: 13, fontWeight: '500', color: COLORS.text },
+  availableIngPrice: { fontSize: 11, color: COLORS.textSecondary },
+  addIngBtn: { width: 28, height: 28, borderRadius: 14, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
+  addIngBtnText: { fontSize: 18, color: '#FFF', lineHeight: 22 },
 
   // Box/bag breakdown
   boxSection: {
