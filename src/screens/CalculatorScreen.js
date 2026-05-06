@@ -8,7 +8,7 @@ import {
   Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useApp, formatCurrency, calculateDishCost, suggestPrices } from '../context/AppContext';
+import { useApp, formatCurrency, calculateDishCost, suggestPrices, calcGroupWeightedRate } from '../context/AppContext';
 import {
   COLORS,
   Header,
@@ -288,16 +288,32 @@ export default function CalculatorScreen({ route }) {
                 <Text style={styles.sectionTitle}>⏱️ Labor Detail</Text>
                 <Divider />
                 {selectedDish.laborTime.map(item => {
-                  const dept = state.departments.find(d => d.id === item.departmentId);
+                  if (item.group) {
+                    const rate     = calcGroupWeightedRate(state.employees, item.group);
+                    const itemCost = (rate / 60) * item.minutes;
+                    return (
+                      <View key={item.group} style={styles.detailRow}>
+                        <View style={styles.detailInfo}>
+                          <Text style={styles.detailName}>
+                            {item.group === 'kitchen' ? '👨‍🍳 Kitchen' : '🍽️ Waiters'}
+                          </Text>
+                          <Text style={styles.detailQty}>
+                            {item.minutes} min × {formatCurrency(rate)}/hr (weighted avg)
+                          </Text>
+                        </View>
+                        <Text style={styles.detailCost}>{formatCurrency(itemCost)}</Text>
+                      </View>
+                    );
+                  }
+                  // backward compat: old departmentId format
+                  const dept = (state.departments || []).find(d => d.id === item.departmentId);
                   if (!dept) return null;
                   const itemCost = (dept.hourlyWage / 60) * item.minutes;
                   return (
                     <View key={item.departmentId} style={styles.detailRow}>
                       <View style={styles.detailInfo}>
                         <Text style={styles.detailName}>{dept.name}</Text>
-                        <Text style={styles.detailQty}>
-                          {item.minutes} min × {formatCurrency(dept.hourlyWage)}/hr
-                        </Text>
+                        <Text style={styles.detailQty}>{item.minutes} min × {formatCurrency(dept.hourlyWage)}/hr</Text>
                       </View>
                       <Text style={styles.detailCost}>{formatCurrency(itemCost)}</Text>
                     </View>

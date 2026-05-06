@@ -10,7 +10,7 @@ import {
   TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useApp, generateId, formatCurrency, calculateDishCost } from '../context/AppContext';
+import { useApp, generateId, formatCurrency, calculateDishCost, calcGroupWeightedRate } from '../context/AppContext';
 import {
   COLORS,
   Header,
@@ -36,7 +36,7 @@ const CATEGORY_ICONS = {
 
 export default function DishesScreen({ navigation }) {
   const { state, dispatch } = useApp();
-  const { dishes, ingredients, departments } = state;
+  const { dishes, ingredients, employees } = state;
   const [modalVisible, setModalVisible] = useState(false);
   const [step, setStep] = useState(1); // 1: basic info, 2: ingredients, 3: labor
   const [editing, setEditing] = useState(null);
@@ -139,30 +139,22 @@ export default function DishesScreen({ navigation }) {
     return found ? String(found.quantity) : '';
   }
 
-  // Labor time management
-  function updateLaborTime(departmentId, minutes) {
+  // Labor time management — group-based ('kitchen' | 'waiter')
+  function updateLaborTime(group, minutes) {
     setForm(f => {
-      const existing = f.laborTime.find(l => l.departmentId === departmentId);
+      const existing = f.laborTime.find(l => l.group === group);
       if (minutes === '' || minutes === '0') {
-        return { ...f, laborTime: f.laborTime.filter(l => l.departmentId !== departmentId) };
+        return { ...f, laborTime: f.laborTime.filter(l => l.group !== group) };
       }
       if (existing) {
-        return {
-          ...f,
-          laborTime: f.laborTime.map(l =>
-            l.departmentId === departmentId ? { ...l, minutes: parseFloat(minutes) || 0 } : l
-          ),
-        };
+        return { ...f, laborTime: f.laborTime.map(l => l.group === group ? { ...l, minutes: parseFloat(minutes) || 0 } : l) };
       }
-      return {
-        ...f,
-        laborTime: [...f.laborTime, { departmentId, minutes: parseFloat(minutes) || 0 }],
-      };
+      return { ...f, laborTime: [...f.laborTime, { group, minutes: parseFloat(minutes) || 0 }] };
     });
   }
 
-  function getLaborTime(departmentId) {
-    const found = form.laborTime.find(l => l.departmentId === departmentId);
+  function getLaborTime(group) {
+    const found = form.laborTime.find(l => l.group === group);
     return found ? String(found.minutes) : '';
   }
 
@@ -383,24 +375,30 @@ export default function DishesScreen({ navigation }) {
               {step === 3 && (
                 <View>
                   <Text style={styles.stepHint}>
-                    Enter prep time per department (minutes)
+                    Enter prep time per staff group. Rates auto-calculated from employee schedules.
                   </Text>
-                  {departments.length === 0 ? (
-                    <EmptyState icon="👥" message="No departments yet. Go to Staff tab to add." />
-                  ) : (
-                    departments.map(dept => (
-                      <View key={dept.id} style={styles.ingFormRow}>
+                  {['kitchen', 'waiter'].map(group => {
+                    const rate     = calcGroupWeightedRate(employees, group);
+                    const empCount = employees.filter(e => e.group === group).length;
+                    if (empCount === 0) return null;
+                    return (
+                      <View key={group} style={styles.ingFormRow}>
                         <View style={styles.ingFormInfo}>
-                          <Text style={styles.ingFormName}>{dept.name}</Text>
+                          <Text style={styles.ingFormName}>
+                            {group === 'kitchen' ? '👨‍🍳 Kitchen' : '🍽️ Waiters'}
+                          </Text>
                           <Text style={styles.ingFormPrice}>
-                            {formatCurrency(dept.hourlyWage)}/hr
+                            {formatCurrency(rate)}/hr · {empCount} staff
+                          </Text>
+                          <Text style={[styles.ingFormPrice, { color: COLORS.textLight }]}>
+                            = {formatCurrency(rate / 60)}/min
                           </Text>
                         </View>
                         <View style={styles.ingFormInput}>
                           <TextInput
                             style={styles.qtyInput}
-                            value={getLaborTime(dept.id)}
-                            onChangeText={v => updateLaborTime(dept.id, v)}
+                            value={getLaborTime(group)}
+                            onChangeText={v => updateLaborTime(group, v)}
                             placeholder="0"
                             keyboardType="numeric"
                             placeholderTextColor={COLORS.textLight}
@@ -408,8 +406,8 @@ export default function DishesScreen({ navigation }) {
                           <Text style={styles.qtyUnit}>min</Text>
                         </View>
                       </View>
-                    ))
-                  )}
+                    );
+                  })}
                 </View>
               )}
 
