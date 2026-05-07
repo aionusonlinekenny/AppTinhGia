@@ -119,6 +119,7 @@ const initialState = {
     workingDaysPerMonth: 26,
     totalDishesPerDay: 100,
     salesTaxRate: 8,
+    staffPassword: '1234',
   },
 };
 

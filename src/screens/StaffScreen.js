@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   useApp,
   generateId,
@@ -111,12 +112,87 @@ const sStyles = StyleSheet.create({
 // ── Root ─────────────────────────────────────────────────────────
 export default function StaffScreen() {
   const { state, dispatch } = useApp();
-  const { employees, payrollEntries, salesRecords } = state;
-  const [activeTab, setActiveTab] = useState('Payroll');
+  const { employees, payrollEntries, salesRecords, settings } = state;
+  const [activeTab, setActiveTab]     = useState('Payroll');
+  const [locked, setLocked]           = useState(true);
+  const [pinInput, setPinInput]       = useState('');
+  const [lockError, setLockError]     = useState('');
+  const [changePwVisible, setChangePwVisible] = useState(false);
+  const [cpForm, setCpForm]           = useState({ current: '', next: '', confirm: '' });
+  const [cpError, setCpError]         = useState('');
+
+  // Re-lock every time this screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      setLocked(true);
+      setPinInput('');
+      setLockError('');
+    }, [])
+  );
+
+  const password = settings?.staffPassword || '1234';
+
+  function handleUnlock() {
+    if (pinInput === password) {
+      setLocked(false);
+      setPinInput('');
+      setLockError('');
+    } else {
+      setLockError('Incorrect password. Try again.');
+      setPinInput('');
+    }
+  }
+
+  function handleChangePassword() {
+    if (cpForm.current !== password) { setCpError('Current password is incorrect.'); return; }
+    if (cpForm.next.length < 4)      { setCpError('New password must be at least 4 characters.'); return; }
+    if (cpForm.next !== cpForm.confirm) { setCpError('New passwords do not match.'); return; }
+    dispatch({ type: 'UPDATE_SETTINGS', payload: { staffPassword: cpForm.next } });
+    setChangePwVisible(false);
+    setCpForm({ current: '', next: '', confirm: '' });
+    setCpError('');
+    Alert.alert('Success', 'Password updated.');
+  }
+
+  if (locked) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['bottom']}>
+        <View style={styles.lockScreen}>
+          <Text style={styles.lockIcon}>🔒</Text>
+          <Text style={styles.lockTitle}>Staff & Payroll</Text>
+          <Text style={styles.lockSub}>Enter password to access</Text>
+          <TextInput
+            style={styles.lockInput}
+            value={pinInput}
+            onChangeText={v => { setPinInput(v); setLockError(''); }}
+            placeholder="Password"
+            placeholderTextColor={COLORS.textLight}
+            secureTextEntry
+            autoFocus
+            onSubmitEditing={handleUnlock}
+            returnKeyType="done"
+          />
+          {lockError ? <Text style={styles.lockError}>{lockError}</Text> : null}
+          <TouchableOpacity style={styles.unlockBtn} onPress={handleUnlock}>
+            <Text style={styles.unlockBtnText}>Unlock</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <Header title="Staff & Payroll" subtitle="Wages, schedules & weekly payroll" />
+
+      {/* Change password button */}
+      <TouchableOpacity
+        style={styles.changePwRow}
+        onPress={() => { setCpForm({ current: '', next: '', confirm: '' }); setCpError(''); setChangePwVisible(true); }}
+      >
+        <Text style={styles.changePwText}>🔑 Change password</Text>
+      </TouchableOpacity>
+
       <View style={styles.tabBar}>
         {TABS.map(t => (
           <TouchableOpacity key={t} style={[styles.tabBtn, activeTab===t && styles.tabBtnActive]} onPress={()=>setActiveTab(t)}>
@@ -126,6 +202,48 @@ export default function StaffScreen() {
       </View>
       {activeTab === 'Payroll'    && <PayrollTab   employees={employees} payrollEntries={payrollEntries} salesRecords={salesRecords} dispatch={dispatch} />}
       {activeTab === 'Employees'  && <EmployeesTab employees={employees} dispatch={dispatch} />}
+
+      {/* Change password modal */}
+      <Modal visible={changePwVisible} animationType="fade" transparent>
+        <View style={styles.cpOverlay}>
+          <View style={styles.cpBox}>
+            <Text style={styles.cpTitle}>🔑 Change Password</Text>
+            <TextInput
+              style={styles.cpInput}
+              value={cpForm.current}
+              onChangeText={v => { setCpForm(f => ({ ...f, current: v })); setCpError(''); }}
+              placeholder="Current password"
+              placeholderTextColor={COLORS.textLight}
+              secureTextEntry
+            />
+            <TextInput
+              style={styles.cpInput}
+              value={cpForm.next}
+              onChangeText={v => { setCpForm(f => ({ ...f, next: v })); setCpError(''); }}
+              placeholder="New password (min 4 chars)"
+              placeholderTextColor={COLORS.textLight}
+              secureTextEntry
+            />
+            <TextInput
+              style={styles.cpInput}
+              value={cpForm.confirm}
+              onChangeText={v => { setCpForm(f => ({ ...f, confirm: v })); setCpError(''); }}
+              placeholder="Confirm new password"
+              placeholderTextColor={COLORS.textLight}
+              secureTextEntry
+            />
+            {cpError ? <Text style={styles.lockError}>{cpError}</Text> : null}
+            <View style={styles.cpActions}>
+              <TouchableOpacity style={[styles.cpBtn, styles.cpBtnOutline]} onPress={() => setChangePwVisible(false)}>
+                <Text style={styles.cpBtnOutlineText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.cpBtn} onPress={handleChangePassword}>
+                <Text style={styles.cpBtnText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -513,6 +631,37 @@ function EmployeesTab({ employees, dispatch }) {
 // ── STYLES ────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   safe:         { flex:1, backgroundColor:COLORS.background },
+
+  // Lock screen
+  lockScreen:   { flex:1, alignItems:'center', justifyContent:'center', paddingHorizontal:40, backgroundColor:COLORS.background },
+  lockIcon:     { fontSize:56, marginBottom:16 },
+  lockTitle:    { fontSize:22, fontWeight:'800', color:COLORS.text, marginBottom:6 },
+  lockSub:      { fontSize:14, color:COLORS.textSecondary, marginBottom:28 },
+  lockInput:    {
+    width:'100%', height:52, borderWidth:1.5, borderColor:COLORS.border,
+    borderRadius:12, paddingHorizontal:16, fontSize:18, color:COLORS.text,
+    backgroundColor:COLORS.surface, textAlign:'center', letterSpacing:4,
+    marginBottom:12,
+  },
+  lockError:    { fontSize:13, color:'#E53935', marginBottom:12, textAlign:'center' },
+  unlockBtn:    { width:'100%', backgroundColor:COLORS.primary, borderRadius:12, paddingVertical:14, alignItems:'center' },
+  unlockBtnText:{ fontSize:16, fontWeight:'700', color:'#FFF' },
+
+  // Change password row
+  changePwRow:  { flexDirection:'row', justifyContent:'flex-end', paddingHorizontal:16, paddingVertical:8, backgroundColor:COLORS.surface, borderBottomWidth:1, borderBottomColor:COLORS.border },
+  changePwText: { fontSize:12, color:COLORS.textSecondary },
+
+  // Change password modal
+  cpOverlay:    { flex:1, backgroundColor:'rgba(0,0,0,0.55)', justifyContent:'center', alignItems:'center', paddingHorizontal:32 },
+  cpBox:        { backgroundColor:COLORS.surface, borderRadius:16, padding:24, width:'100%' },
+  cpTitle:      { fontSize:17, fontWeight:'700', color:COLORS.text, marginBottom:16, textAlign:'center' },
+  cpInput:      { height:48, borderWidth:1.5, borderColor:COLORS.border, borderRadius:10, paddingHorizontal:14, fontSize:15, color:COLORS.text, backgroundColor:'#FAFAFA', marginBottom:10 },
+  cpActions:    { flexDirection:'row', gap:10, marginTop:8 },
+  cpBtn:        { flex:1, backgroundColor:COLORS.primary, borderRadius:10, paddingVertical:12, alignItems:'center' },
+  cpBtnText:    { fontSize:15, fontWeight:'700', color:'#FFF' },
+  cpBtnOutline: { backgroundColor:'transparent', borderWidth:1.5, borderColor:COLORS.border },
+  cpBtnOutlineText: { fontSize:15, fontWeight:'600', color:COLORS.textSecondary },
+
   tabBar:       { flexDirection:'row', backgroundColor:COLORS.surface, borderBottomWidth:1, borderBottomColor:COLORS.border },
   tabBtn:       { flex:1, paddingVertical:12, alignItems:'center' },
   tabBtnActive: { borderBottomWidth:2, borderBottomColor:COLORS.primary },
