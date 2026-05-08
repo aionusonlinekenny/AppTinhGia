@@ -1,10 +1,10 @@
 <?php
-define('DB_HOST',     'localhost');
+define('DB_HOST',     'custsql-dom09.eigbox.net');
 define('DB_PORT',     '3306');
-define('DB_USER',     'appcostcount');
+define('DB_USER',     'admincostpro');
 define('DB_PASS',     'Eban0815@');
-define('DB_NAME',     'AppCostCount');
-define('ADMIN_SECRET','change-this-to-strong-secret-123'); // Change this!
+define('DB_NAME',     'appcostcount');
+define('ADMIN_SECRET','MenuCostPro@2025!Kenny'); // Your private admin password
 
 function getDB() {
     static $pdo = null;
