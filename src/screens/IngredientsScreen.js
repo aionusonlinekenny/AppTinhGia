@@ -13,7 +13,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   useApp,
   generateId,
-  formatCurrency,
   getWeekOf,
   offsetWeek,
   formatWeekRange,
@@ -32,12 +31,9 @@ import {
   EmptyState,
   Divider,
 } from '../components';
+import { useI18n } from '../i18n';
 
 const CATEGORIES = ['Meat', 'Seafood', 'Produce', 'Starch', 'Spices', 'Dairy & Eggs', 'Beverages', 'Other'];
-const UNITS = ['lb', 'oz', 'fl oz', 'gal', 'qt', 'pt', 'cup', 'tbsp', 'tsp', 'each', 'pack', 'box', 'bag', 'bunch', 'slice', 'count'];
-const SUB_UNITS = ['lb', 'oz', 'piece', 'each'];
-const BOX_UNITS = ['box', 'bag', 'pack'];
-function isBoxUnit(unit) { return BOX_UNITS.includes((unit || '').toLowerCase()); }
 
 const CATEGORY_ICONS = {
   'Meat': '🥩',
@@ -50,41 +46,42 @@ const CATEGORY_ICONS = {
   'Other': '📦',
 };
 
-const TABS = ['Ingredients', 'Stocks & Bases', 'Weekly Orders'];
-
 export default function IngredientsScreen() {
   const { state, dispatch } = useApp();
+  const { t, formatCurrency, config } = useI18n();
   const { ingredients, supplyOrders, stockRecipes = [], employees = [] } = state;
-  const [activeTab, setActiveTab] = useState('Ingredients');
+  const [activeTab, setActiveTab] = useState(0);
+
+  const TABS = [t('ingredients.tabIngredients'), t('ingredients.tabStocks'), t('ingredients.tabOrders')];
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <Header
-        title="Ingredients & Supplies"
-        subtitle="Manage ingredient prices and weekly orders"
+        title={t('ingredients.title')}
+        subtitle={t('ingredients.subtitle')}
       />
 
       {/* Tab bar */}
       <View style={styles.tabBar}>
-        {TABS.map(t => (
+        {TABS.map((tab, idx) => (
           <TouchableOpacity
-            key={t}
-            style={[styles.tabBtn, activeTab === t && styles.tabBtnActive]}
-            onPress={() => setActiveTab(t)}
+            key={idx}
+            style={[styles.tabBtn, activeTab === idx && styles.tabBtnActive]}
+            onPress={() => setActiveTab(idx)}
           >
-            <Text style={[styles.tabText, activeTab === t && styles.tabTextActive]}>{t}</Text>
+            <Text style={[styles.tabText, activeTab === idx && styles.tabTextActive]}>{tab}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      {activeTab === 'Ingredients' && (
-        <IngredientsTab ingredients={ingredients} dispatch={dispatch} />
+      {activeTab === 0 && (
+        <IngredientsTab ingredients={ingredients} dispatch={dispatch} t={t} formatCurrency={formatCurrency} config={config} />
       )}
-      {activeTab === 'Stocks & Bases' && (
-        <StocksTab stockRecipes={stockRecipes} ingredients={ingredients} employees={employees} dispatch={dispatch} />
+      {activeTab === 1 && (
+        <StocksTab stockRecipes={stockRecipes} ingredients={ingredients} employees={employees} dispatch={dispatch} t={t} formatCurrency={formatCurrency} config={config} />
       )}
-      {activeTab === 'Weekly Orders' && (
-        <WeeklyOrdersTab ingredients={ingredients} supplyOrders={supplyOrders} dispatch={dispatch} />
+      {activeTab === 2 && (
+        <WeeklyOrdersTab ingredients={ingredients} supplyOrders={supplyOrders} dispatch={dispatch} t={t} formatCurrency={formatCurrency} config={config} />
       )}
     </SafeAreaView>
   );
@@ -93,12 +90,27 @@ export default function IngredientsScreen() {
 // ────────────────────────────────────────────────────────────────
 // INGREDIENTS TAB
 // ────────────────────────────────────────────────────────────────
-function IngredientsTab({ ingredients, dispatch }) {
+function IngredientsTab({ ingredients, dispatch, t, formatCurrency, config }) {
+  const UNITS     = config.units;
+  const SUB_UNITS = config.subUnits;
+  const BOX_UNITS = config.boxUnits;
+  function isBoxUnit(unit) { return BOX_UNITS.includes((unit || '').toLowerCase()); }
+
+  const catLabel = (cat) => {
+    const map = {
+      'Meat': t('ingredients.catMeat'), 'Seafood': t('ingredients.catSeafood'),
+      'Produce': t('ingredients.catProduce'), 'Starch': t('ingredients.catStarch'),
+      'Spices': t('ingredients.catSpices'), 'Dairy & Eggs': t('ingredients.catDairy'),
+      'Beverages': t('ingredients.catBeverages'), 'Other': t('ingredients.catOther'),
+    };
+    return map[cat] || cat;
+  };
+
   const [modalVisible, setModalVisible] = useState(false);
   const [editing, setEditing] = useState(null);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [form, setForm] = useState({ name: '', unit: 'lb', pricePerUnit: '', category: 'Other', unitsPerBox: '', subUnit: 'lb' });
+  const [form, setForm] = useState({ name: '', unit: UNITS[0] || 'lb', pricePerUnit: '', category: 'Other', unitsPerBox: '', subUnit: SUB_UNITS[0] || 'lb' });
   const [showUnitPicker, setShowUnitPicker] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [showSubUnitPicker, setShowSubUnitPicker] = useState(false);
@@ -116,7 +128,7 @@ function IngredientsTab({ ingredients, dispatch }) {
 
   function openAdd() {
     setEditing(null);
-    setForm({ name: '', unit: 'lb', pricePerUnit: '', category: 'Other', unitsPerBox: '', subUnit: 'lb' });
+    setForm({ name: '', unit: UNITS[0] || 'lb', pricePerUnit: '', category: 'Other', unitsPerBox: '', subUnit: SUB_UNITS[0] || 'lb' });
     setErrors({});
     setModalVisible(true);
   }
@@ -129,7 +141,7 @@ function IngredientsTab({ ingredients, dispatch }) {
       pricePerUnit: String(ing.pricePerUnit),
       category: ing.category,
       unitsPerBox: ing.unitsPerBox ? String(ing.unitsPerBox) : '',
-      subUnit: ing.subUnit || 'lb',
+      subUnit: ing.subUnit || SUB_UNITS[0] || 'lb',
     });
     setErrors({});
     setModalVisible(true);
@@ -137,11 +149,11 @@ function IngredientsTab({ ingredients, dispatch }) {
 
   function validate() {
     const errs = {};
-    if (!form.name.trim()) errs.name = 'Enter ingredient name';
+    if (!form.name.trim()) errs.name = t('ingredients.errName');
     if (!form.pricePerUnit || isNaN(Number(form.pricePerUnit)) || Number(form.pricePerUnit) <= 0)
-      errs.pricePerUnit = 'Price must be a positive number';
+      errs.pricePerUnit = t('ingredients.errPrice');
     if (isBoxUnit(form.unit) && (!form.unitsPerBox || isNaN(Number(form.unitsPerBox)) || Number(form.unitsPerBox) <= 0))
-      errs.unitsPerBox = 'Enter how many units per box/bag';
+      errs.unitsPerBox = t('ingredients.errUnitsPerBox');
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -164,10 +176,10 @@ function IngredientsTab({ ingredients, dispatch }) {
   }
 
   function handleDelete(ing) {
-    Alert.alert('Delete Ingredient', `Delete "${ing.name}"?`, [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('ingredients.deleteIngTitle'), t('ingredients.deleteIngMsg', { ingName: ing.name }), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('common.delete'),
         style: 'destructive',
         onPress: () => dispatch({ type: 'DELETE_INGREDIENT', payload: ing.id }),
       },
@@ -195,7 +207,7 @@ function IngredientsTab({ ingredients, dispatch }) {
           <Text style={styles.ingName}>{ing.name}</Text>
           <Text style={styles.ingPrice}>
             {formatCurrency(ing.pricePerUnit)} / {ing.unit}
-            {isBox && ing.unitsPerBox ? ` · ${ing.unitsPerBox} ${ing.subUnit || 'lb'}` : ''}
+            {isBox && ing.unitsPerBox ? ` · ${ing.unitsPerBox} ${ing.subUnit || SUB_UNITS[0] || 'lb'}` : ''}
           </Text>
           {isBox && ing.unitsPerBox ? (
             <Text style={styles.ingSubPrice}>
@@ -224,7 +236,7 @@ function IngredientsTab({ ingredients, dispatch }) {
             style={styles.searchInput}
             value={search}
             onChangeText={setSearch}
-            placeholder="Search ingredients..."
+            placeholder={t('ingredients.searchPlaceholder')}
             placeholderTextColor={COLORS.textLight}
           />
           {search ? (
@@ -251,7 +263,7 @@ function IngredientsTab({ ingredients, dispatch }) {
             style={[styles.catChip, selectedCategory === cat && styles.catChipActive]}
           >
             <Text style={[styles.catChipText, selectedCategory === cat && styles.catChipTextActive]}>
-              {cat === 'All' ? '🗂️ All' : `${CATEGORY_ICONS[cat]} ${cat}`}
+              {cat === 'All' ? t('ingredients.allCategories') : `${CATEGORY_ICONS[cat]} ${catLabel(cat)}`}
             </Text>
           </TouchableOpacity>
         ))}
@@ -259,11 +271,11 @@ function IngredientsTab({ ingredients, dispatch }) {
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
         {filtered.length === 0 ? (
-          <EmptyState icon="🥕" message="No ingredients found" />
+          <EmptyState icon="🥕" message={t('ingredients.noIngredients')} />
         ) : selectedCategory === 'All' && groupedByCategory ? (
           Object.entries(groupedByCategory).map(([cat, items]) => (
             <Card key={cat}>
-              <Text style={styles.groupTitle}>{CATEGORY_ICONS[cat]} {cat} ({items.length})</Text>
+              <Text style={styles.groupTitle}>{CATEGORY_ICONS[cat]} {catLabel(cat)} ({items.length})</Text>
               <Divider />
               {items.map(renderIngredient)}
             </Card>
@@ -279,26 +291,26 @@ function IngredientsTab({ ingredients, dispatch }) {
           <ScrollView>
             <View style={styles.modalBox}>
               <Text style={styles.modalTitle}>
-                {editing ? 'Update Ingredient' : 'Add Ingredient'}
+                {editing ? t('ingredients.updateTitle') : t('ingredients.addTitle')}
               </Text>
               <Input
-                label="Ingredient Name"
+                label={t('ingredients.nameLabel')}
                 value={form.name}
                 onChangeText={v => setForm(f => ({ ...f, name: v }))}
-                placeholder="e.g. Beef, Tomato, Butter..."
+                placeholder={t('ingredients.namePlaceholder')}
                 error={errors.name}
               />
               <Input
-                label="Price / unit"
+                label={t('ingredients.price')}
                 value={form.pricePerUnit}
                 onChangeText={v => setForm(f => ({ ...f, pricePerUnit: v }))}
-                placeholder="e.g. 8.99"
+                placeholder={t('ingredients.pricePlaceholder')}
                 keyboardType="numeric"
                 right="$"
                 error={errors.pricePerUnit}
               />
 
-              <Text style={styles.pickLabel}>Unit</Text>
+              <Text style={styles.pickLabel}>{t('ingredients.unit')}</Text>
               <TouchableOpacity
                 style={styles.pickBtn}
                 onPress={() => setShowUnitPicker(!showUnitPicker)}
@@ -325,20 +337,20 @@ function IngredientsTab({ ingredients, dispatch }) {
               {/* Box / Bag breakdown fields */}
               {isBoxUnit(form.unit) && (
                 <View style={styles.boxSection}>
-                  <Text style={styles.boxSectionTitle}>📦 Box / Bag Breakdown</Text>
+                  <Text style={styles.boxSectionTitle}>{t('ingredients.boxBreakdown')}</Text>
                   <View style={styles.row2}>
                     <View style={{ flex: 1, marginRight: 8 }}>
                       <Input
-                        label={`How many ${form.subUnit || 'lb'} per ${form.unit}?`}
+                        label={t('ingredients.unitsPerBox', { subUnit: form.subUnit, unit: form.unit })}
                         value={form.unitsPerBox}
                         onChangeText={v => setForm(f => ({ ...f, unitsPerBox: v }))}
-                        placeholder="e.g. 40"
+                        placeholder={t('ingredients.unitsPlaceholder')}
                         keyboardType="numeric"
                         error={errors.unitsPerBox}
                       />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.pickLabel}>Sub-unit</Text>
+                      <Text style={styles.pickLabel}>{t('ingredients.subUnit')}</Text>
                       <TouchableOpacity
                         style={styles.pickBtn}
                         onPress={() => setShowSubUnitPicker(!showSubUnitPicker)}
@@ -366,10 +378,10 @@ function IngredientsTab({ ingredients, dispatch }) {
                   {form.pricePerUnit && form.unitsPerBox && Number(form.unitsPerBox) > 0 && (
                     <View style={styles.boxPreview}>
                       <Text style={styles.boxPreviewText}>
-                        1 {form.unit} = {form.unitsPerBox} {form.subUnit || 'lb'}
+                        1 {form.unit} = {form.unitsPerBox} {form.subUnit || SUB_UNITS[0] || 'lb'}
                       </Text>
                       <Text style={styles.boxPreviewText}>
-                        → {formatCurrency(Number(form.pricePerUnit) / Number(form.unitsPerBox))} / {form.subUnit || 'lb'}
+                        → {formatCurrency(Number(form.pricePerUnit) / Number(form.unitsPerBox))} / {form.subUnit || SUB_UNITS[0] || 'lb'}
                         {(form.subUnit === 'lb') && (
                           `  ·  ${formatCurrency(Number(form.pricePerUnit) / Number(form.unitsPerBox) / 16)} / oz`
                         )}
@@ -379,12 +391,12 @@ function IngredientsTab({ ingredients, dispatch }) {
                 </View>
               )}
 
-              <Text style={[styles.pickLabel, { marginTop: 12 }]}>Category</Text>
+              <Text style={[styles.pickLabel, { marginTop: 12 }]}>{t('ingredients.category')}</Text>
               <TouchableOpacity
                 style={styles.pickBtn}
                 onPress={() => setShowCategoryPicker(!showCategoryPicker)}
               >
-                <Text style={styles.pickValue}>{CATEGORY_ICONS[form.category]} {form.category}</Text>
+                <Text style={styles.pickValue}>{CATEGORY_ICONS[form.category]} {catLabel(form.category)}</Text>
                 <Text style={styles.pickArrow}>▼</Text>
               </TouchableOpacity>
               {showCategoryPicker && (
@@ -396,7 +408,7 @@ function IngredientsTab({ ingredients, dispatch }) {
                       onPress={() => { setForm(f => ({ ...f, category: c })); setShowCategoryPicker(false); }}
                     >
                       <Text style={[styles.pickerItemText, form.category === c && styles.pickerItemTextActive]}>
-                        {CATEGORY_ICONS[c]} {c}
+                        {CATEGORY_ICONS[c]} {catLabel(c)}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -405,13 +417,13 @@ function IngredientsTab({ ingredients, dispatch }) {
 
               <View style={styles.modalActions}>
                 <Button
-                  label="Cancel"
+                  label={t('common.cancel')}
                   variant="outline"
                   onPress={() => setModalVisible(false)}
                   style={{ flex: 1, marginRight: 8 }}
                 />
                 <Button
-                  label={editing ? 'Update' : 'Add'}
+                  label={editing ? t('common.update') : t('common.add')}
                   onPress={handleSave}
                   style={{ flex: 1 }}
                 />
@@ -427,7 +439,7 @@ function IngredientsTab({ ingredients, dispatch }) {
 // ────────────────────────────────────────────────────────────────
 // STOCKS & BASES TAB
 // ────────────────────────────────────────────────────────────────
-function StocksTab({ stockRecipes, ingredients, employees, dispatch }) {
+function StocksTab({ stockRecipes, ingredients, employees, dispatch, t, formatCurrency, config }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [editing, setEditing] = useState(null);
   const [ingSearch, setIngSearch] = useState('');
@@ -463,8 +475,8 @@ function StocksTab({ stockRecipes, ingredients, employees, dispatch }) {
   }
 
   function handleSave() {
-    if (!form.name.trim()) { Alert.alert('Error', 'Enter a name for this stock/broth'); return; }
-    if (!form.yieldOz || Number(form.yieldOz) <= 0) { Alert.alert('Error', 'Enter the batch yield in oz'); return; }
+    if (!form.name.trim()) { Alert.alert('Error', t('ingredients.errStockName')); return; }
+    if (!form.yieldOz || Number(form.yieldOz) <= 0) { Alert.alert('Error', t('ingredients.errYield')); return; }
     const data = {
       id: editing?.id || generateId(),
       name: form.name.trim(),
@@ -480,9 +492,9 @@ function StocksTab({ stockRecipes, ingredients, employees, dispatch }) {
   }
 
   function handleDelete(stock) {
-    Alert.alert('Delete', `Delete "${stock.name}"?`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => dispatch({ type: 'DELETE_STOCK_RECIPE', payload: stock.id }) },
+    Alert.alert(t('ingredients.deleteStockTitle'), `Delete "${stock.name}"?`, [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.delete'), style: 'destructive', onPress: () => dispatch({ type: 'DELETE_STOCK_RECIPE', payload: stock.id }) },
     ]);
   }
 
@@ -523,7 +535,7 @@ function StocksTab({ stockRecipes, ingredients, employees, dispatch }) {
     <View style={{ flex: 1 }}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 24 }}>
         {stockRecipes.length === 0 ? (
-          <EmptyState icon="🍲" message="No stocks or broths yet.\nTap + to define a batch recipe." />
+          <EmptyState icon="🍲" message={t('ingredients.noStocks')} />
         ) : (
           stockRecipes.map(stock => {
             const costPerOz = calculateStockCostPerOz(stock, fakeState);
@@ -535,10 +547,10 @@ function StocksTab({ stockRecipes, ingredients, employees, dispatch }) {
                   <View style={{ flex: 1 }}>
                     <Text style={styles.stockName}>{stock.name}</Text>
                     <Text style={styles.stockSub}>
-                      Yield: {stock.yieldOz} oz · {formatCurrency(costPerOz)}/oz
+                      {t('ingredients.yieldLabel', { yieldOz: stock.yieldOz, unit: config.yieldUnit, costPerOz: formatCurrency(costPerOz) })}
                     </Text>
                     <Text style={styles.stockSub}>
-                      Total batch cost: {formatCurrency(totalCost)}
+                      {t('ingredients.totalBatchCost', { totalCost: formatCurrency(totalCost) })}
                     </Text>
                   </View>
                   <View style={styles.ingActions}>
@@ -569,8 +581,8 @@ function StocksTab({ stockRecipes, ingredients, employees, dispatch }) {
                 {stock.laborMinutes > 0 && (
                   <View style={styles.stockIngRow}>
                     <Text style={styles.stockIngIcon}>👨‍🍳</Text>
-                    <Text style={styles.stockIngName}>Labor ({stock.laborGroup})</Text>
-                    <Text style={styles.stockIngQty}>{stock.laborMinutes} min</Text>
+                    <Text style={styles.stockIngName}>{t('ingredients.labor', { laborGroup: stock.laborGroup })}</Text>
+                    <Text style={styles.stockIngQty}>{t('ingredients.laborTime', { laborMinutes: stock.laborMinutes })}</Text>
                     <Text style={styles.stockIngCost}>
                       {formatCurrency((calcGroupWeightedRate(employees, stock.laborGroup) / 60) * stock.laborMinutes)}
                     </Text>
@@ -581,7 +593,7 @@ function StocksTab({ stockRecipes, ingredients, employees, dispatch }) {
           })
         )}
         <TouchableOpacity style={styles.addEntryBtn} onPress={openAdd}>
-          <Text style={styles.addEntryText}>+ Add Stock / Broth</Text>
+          <Text style={styles.addEntryText}>{t('ingredients.addStockBtn')}</Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -589,19 +601,19 @@ function StocksTab({ stockRecipes, ingredients, employees, dispatch }) {
         <View style={styles.modalOverlay}>
           <ScrollView>
             <View style={styles.modalBox}>
-              <Text style={styles.modalTitle}>{editing ? 'Edit Stock Recipe' : 'New Stock / Broth'}</Text>
+              <Text style={styles.modalTitle}>{editing ? t('ingredients.editStockTitle') : t('ingredients.addStockTitle')}</Text>
 
               <Input
-                label="Name"
+                label={t('ingredients.stockName')}
                 value={form.name}
                 onChangeText={v => setForm(f => ({ ...f, name: v }))}
-                placeholder="e.g. Pho Broth, Chicken Stock..."
+                placeholder={t('ingredients.stockNamePlaceholder')}
               />
 
               {/* Selected ingredients */}
               {form.stockIngredients.length > 0 && (
                 <View style={styles.selectedSection}>
-                  <Text style={styles.sectionLabelSmall}>Ingredients in batch</Text>
+                  <Text style={styles.sectionLabelSmall}>{t('ingredients.batchIngredients')}</Text>
                   {form.stockIngredients.map(item => {
                     const ing = ingredients.find(i => i.id === item.ingredientId);
                     if (!ing) return null;
@@ -636,7 +648,7 @@ function StocksTab({ stockRecipes, ingredients, employees, dispatch }) {
               )}
 
               {/* Add ingredient search */}
-              <Text style={styles.sectionLabelSmall}>Add ingredients</Text>
+              <Text style={styles.sectionLabelSmall}>{t('ingredients.addIngredients')}</Text>
               <View style={styles.ingSearchBox}>
                 <Text style={{ fontSize: 14 }}>🔍</Text>
                 <TextInput
@@ -663,19 +675,19 @@ function StocksTab({ stockRecipes, ingredients, employees, dispatch }) {
               ))}
 
               {/* Labor */}
-              <Text style={[styles.pickLabel, { marginTop: 14 }]}>Kitchen labor (cooking time)</Text>
+              <Text style={[styles.pickLabel, { marginTop: 14 }]}>{t('ingredients.laborSection')}</Text>
               <View style={styles.row2}>
                 <View style={{ flex: 1, marginRight: 8 }}>
                   <Input
-                    label="Minutes"
+                    label={t('ingredients.laborMinutes')}
                     value={form.laborMinutes}
                     onChangeText={v => setForm(f => ({ ...f, laborMinutes: v }))}
-                    placeholder="e.g. 240 (4hr)"
+                    placeholder={t('ingredients.laborMinutesPlaceholder')}
                     keyboardType="numeric"
                   />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.pickLabel}>Group</Text>
+                  <Text style={styles.pickLabel}>{t('ingredients.laborGroup')}</Text>
                   <TouchableOpacity
                     style={styles.pickBtn}
                     onPress={() => setForm(f => ({ ...f, laborGroup: f.laborGroup === 'kitchen' ? 'waiter' : 'kitchen' }))}
@@ -687,10 +699,10 @@ function StocksTab({ stockRecipes, ingredients, employees, dispatch }) {
 
               {/* Yield */}
               <Input
-                label="Batch yield (oz) — e.g. 120 liters = 4057 oz"
+                label={t('ingredients.batchYield', { unit: config.yieldUnit })}
                 value={form.yieldOz}
                 onChangeText={v => setForm(f => ({ ...f, yieldOz: v }))}
-                placeholder="e.g. 4057"
+                placeholder={t('ingredients.batchYieldPlaceholder')}
                 keyboardType="numeric"
               />
 
@@ -698,17 +710,17 @@ function StocksTab({ stockRecipes, ingredients, employees, dispatch }) {
               {form.yieldOz && Number(form.yieldOz) > 0 && (
                 <View style={styles.boxPreview}>
                   <Text style={styles.boxPreviewText}>
-                    Cost per oz: {formatCurrency(previewCostPerOz)}
+                    {t('ingredients.costPerUnit', { unit: config.yieldUnit, cost: formatCurrency(previewCostPerOz) })}
                   </Text>
                   <Text style={styles.boxPreviewText}>
-                    Full batch ({form.yieldOz} oz): {formatCurrency(previewCostPerOz * Number(form.yieldOz))}
+                    {t('ingredients.fullBatchCost', { yield: form.yieldOz, unit: config.yieldUnit, cost: formatCurrency(previewCostPerOz * Number(form.yieldOz)) })}
                   </Text>
                 </View>
               )}
 
               <View style={styles.modalActions}>
-                <Button label="Cancel" variant="outline" onPress={() => setModalVisible(false)} style={{ flex: 1, marginRight: 8 }} />
-                <Button label={editing ? 'Update' : 'Save'} onPress={handleSave} style={{ flex: 1 }} />
+                <Button label={t('common.cancel')} variant="outline" onPress={() => setModalVisible(false)} style={{ flex: 1, marginRight: 8 }} />
+                <Button label={editing ? t('common.update') : t('common.save')} onPress={handleSave} style={{ flex: 1 }} />
               </View>
             </View>
           </ScrollView>
@@ -721,7 +733,7 @@ function StocksTab({ stockRecipes, ingredients, employees, dispatch }) {
 // ────────────────────────────────────────────────────────────────
 // WEEKLY ORDERS TAB
 // ────────────────────────────────────────────────────────────────
-function WeeklyOrdersTab({ ingredients, supplyOrders, dispatch }) {
+function WeeklyOrdersTab({ ingredients, supplyOrders, dispatch, t, formatCurrency, config }) {
   const [weekOf, setWeekOf] = useState(getWeekOf());
   const [modalVisible, setModalVisible] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -766,11 +778,11 @@ function WeeklyOrdersTab({ ingredients, supplyOrders, dispatch }) {
 
   function validate() {
     const errs = {};
-    if (!form.ingredientId) errs.ingredientId = 'Select an ingredient';
+    if (!form.ingredientId) errs.ingredientId = t('ingredients.errSelectIngredient');
     if (!form.quantity || isNaN(Number(form.quantity)) || Number(form.quantity) <= 0)
-      errs.quantity = 'Enter a valid quantity';
+      errs.quantity = t('ingredients.errQuantity');
     if (!form.unitCost || isNaN(Number(form.unitCost)) || Number(form.unitCost) <= 0)
-      errs.unitCost = 'Enter a valid unit cost';
+      errs.unitCost = t('ingredients.errUnitCost');
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -782,7 +794,7 @@ function WeeklyOrdersTab({ ingredients, supplyOrders, dispatch }) {
       o => o.weekOf === weekOf && o.ingredientId === form.ingredientId && o.id !== editing?.id
     );
     if (duplicate) {
-      Alert.alert('Duplicate', 'This ingredient already has an order this week. Edit the existing entry to update the quantity.');
+      Alert.alert(t('ingredients.errDuplicate'), t('ingredients.errDuplicateOrder'));
       return;
     }
     const data = {
@@ -798,10 +810,10 @@ function WeeklyOrdersTab({ ingredients, supplyOrders, dispatch }) {
 
   function handleDelete(order) {
     const ing = ingredients.find(i => i.id === order.ingredientId);
-    Alert.alert('Delete Order', `Remove "${ing?.name || 'ingredient'}" order for this week?`, [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('ingredients.deleteOrderTitle'), t('ingredients.deleteOrderMsg', { ingredientName: ing?.name || 'ingredient' }), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('common.delete'),
         style: 'destructive',
         onPress: () => dispatch({ type: 'DELETE_SUPPLY_ORDER', payload: order.id }),
       },
@@ -843,7 +855,7 @@ function WeeklyOrdersTab({ ingredients, supplyOrders, dispatch }) {
           <Text style={styles.weekArrowText}>‹</Text>
         </TouchableOpacity>
         <View style={styles.weekInfo}>
-          <Text style={styles.weekLabel}>Week of</Text>
+          <Text style={styles.weekLabel}>{t('ingredients.weekOf')}</Text>
           <Text style={styles.weekRange}>{formatWeekRange(weekOf)}</Text>
         </View>
         <TouchableOpacity
@@ -858,18 +870,18 @@ function WeeklyOrdersTab({ ingredients, supplyOrders, dispatch }) {
       <View style={styles.orderSummary}>
         <View style={styles.oSumItem}>
           <Text style={styles.oSumVal}>{weekOrders.length}</Text>
-          <Text style={styles.oSumLabel}>Items Ordered</Text>
+          <Text style={styles.oSumLabel}>{t('ingredients.itemsOrdered')}</Text>
         </View>
         <View style={styles.oSumDivider} />
         <View style={styles.oSumItem}>
           <Text style={styles.oSumVal}>{formatCurrency(weekTotal)}</Text>
-          <Text style={styles.oSumLabel}>Total Supply Cost</Text>
+          <Text style={styles.oSumLabel}>{t('ingredients.totalSupplyCost')}</Text>
         </View>
       </View>
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 24 }}>
         {weekOrders.length === 0 ? (
-          <EmptyState icon="📦" message="No supply orders for this week.\nTap + Log Order to record what you bought." />
+          <EmptyState icon="📦" message={t('ingredients.noOrders')} />
         ) : (
           Object.entries(groupedOrders).map(([cat, items]) => (
             <Card key={cat} style={{ marginBottom: 12 }}>
@@ -914,14 +926,14 @@ function WeeklyOrdersTab({ ingredients, supplyOrders, dispatch }) {
           <ScrollView>
             <View style={styles.modalBox}>
               <Text style={styles.modalTitle}>
-                {editing ? 'Edit Supply Order' : 'Log Supply Order'}
+                {editing ? t('ingredients.editOrderTitle') : t('ingredients.logOrderTitle')}
               </Text>
-              <Text style={styles.modalWeek}>Week: {formatWeekRange(weekOf)}</Text>
+              <Text style={styles.modalWeek}>{t('ingredients.weekRange', { weekRange: formatWeekRange(weekOf) })}</Text>
 
               {/* Ingredient picker */}
-              <Text style={styles.pickLabel}>Ingredient</Text>
+              <Text style={styles.pickLabel}>{t('ingredients.ingredientLabel')}</Text>
               {ingredients.length === 0 ? (
-                <Text style={styles.errText}>No ingredients yet. Add some in the Ingredients tab first.</Text>
+                <Text style={styles.errText}>{t('ingredients.noIngredientsYet')}</Text>
               ) : (
                 <>
                   <ScrollView
@@ -962,10 +974,10 @@ function WeeklyOrdersTab({ ingredients, supplyOrders, dispatch }) {
               <View style={styles.row2}>
                 <View style={{ flex: 1, marginRight: 8 }}>
                   <Input
-                    label={`Quantity${selectedIng ? ` (${selectedIng.unit})` : ''}`}
+                    label={`${t('ingredients.quantity')}${selectedIng ? ` (${selectedIng.unit})` : ''}`}
                     value={form.quantity}
                     onChangeText={v => setForm(f => ({ ...f, quantity: v }))}
-                    placeholder={selectedIng ? `e.g. 50 ${selectedIng.unit}` : 'e.g. 50'}
+                    placeholder={t('ingredients.quantityPlaceholder', { unit: selectedIng?.unit || '' })}
                     keyboardType="numeric"
                     right={selectedIng?.unit || ''}
                     error={errors.quantity}
@@ -973,10 +985,10 @@ function WeeklyOrdersTab({ ingredients, supplyOrders, dispatch }) {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Input
-                    label="Unit Cost"
+                    label={t('ingredients.unitCost')}
                     value={form.unitCost}
                     onChangeText={v => setForm(f => ({ ...f, unitCost: v }))}
-                    placeholder="e.g. 8.99"
+                    placeholder={t('ingredients.unitCostPlaceholder')}
                     keyboardType="numeric"
                     right="$"
                     error={errors.unitCost}
@@ -986,7 +998,7 @@ function WeeklyOrdersTab({ ingredients, supplyOrders, dispatch }) {
 
               {form.quantity && form.unitCost && (
                 <View style={styles.orderPreview}>
-                  <Text style={styles.orderPreviewLabel}>Total supply cost this order:</Text>
+                  <Text style={styles.orderPreviewLabel}>{t('ingredients.totalOrderCost')}</Text>
                   <Text style={styles.orderPreviewVal}>{formatCurrency(previewTotal)}</Text>
                   {selectedIng && (
                     <Text style={styles.orderPreviewNote}>
@@ -998,13 +1010,13 @@ function WeeklyOrdersTab({ ingredients, supplyOrders, dispatch }) {
 
               <View style={styles.modalActions}>
                 <Button
-                  label="Cancel"
+                  label={t('common.cancel')}
                   variant="outline"
                   onPress={() => setModalVisible(false)}
                   style={{ flex: 1, marginRight: 8 }}
                 />
                 <Button
-                  label={editing ? 'Update' : 'Log'}
+                  label={editing ? t('ingredients.updateBtn') : t('ingredients.logBtn')}
                   onPress={handleSave}
                   style={{ flex: 1 }}
                 />
