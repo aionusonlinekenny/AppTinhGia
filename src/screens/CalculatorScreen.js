@@ -8,7 +8,7 @@ import {
   Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useApp, formatCurrency, calculateDishCost, suggestPrices, calcGroupWeightedRate } from '../context/AppContext';
+import { useApp, calculateDishCost, suggestPrices, calcGroupWeightedRate } from '../context/AppContext';
 import {
   COLORS,
   Header,
@@ -17,6 +17,7 @@ import {
   Divider,
   EmptyState,
 } from '../components';
+import { useI18n } from '../i18n';
 
 const PROFIT_COLORS = [
   { bg: '#E8F5E9', text: '#2E7D32', border: '#4CAF50' }, // 30%
@@ -28,6 +29,7 @@ const PROFIT_COLORS = [
 
 export default function CalculatorScreen({ route }) {
   const { state } = useApp();
+  const { t, formatCurrency } = useI18n();
   const { dishes } = state;
   const preSelectedId = route?.params?.dishId;
 
@@ -69,18 +71,20 @@ export default function CalculatorScreen({ route }) {
     return Math.ceil(price);
   }
 
+  const PROFIT_KEYS = ['profit30', 'profit40', 'profit50', 'profit60', 'profit70'];
+
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <Header
-        title="Menu Pricing"
-        subtitle="Cost breakdown and suggested menu prices"
+        title={t('calculator.title')}
+        subtitle={t('calculator.subtitle')}
       />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Dish selector */}
         <Card>
-          <Text style={styles.sectionTitle}>📌 Select Dish</Text>
+          <Text style={styles.sectionTitle}>{t('calculator.selectDish')}</Text>
           {dishes.length === 0 ? (
-            <EmptyState icon="🍽️" message="No dishes yet. Go to Dishes tab to add one." />
+            <EmptyState icon="🍽️" message={t('calculator.noDishes')} />
           ) : (
             <>
               {selectedDish && (
@@ -94,7 +98,7 @@ export default function CalculatorScreen({ route }) {
                     onPress={() => { setSelectedDishId(null); setShowAllDishes(true); }}
                     style={styles.changeBtn}
                   >
-                    <Text style={styles.changeBtnText}>Change</Text>
+                    <Text style={styles.changeBtnText}>{t('calculator.changeDish')}</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -130,12 +134,12 @@ export default function CalculatorScreen({ route }) {
         {cost && (
           <>
             <Card style={styles.costCard}>
-              <Text style={styles.sectionTitle}>💰 Cost Breakdown</Text>
+              <Text style={styles.sectionTitle}>{t('calculator.costBreakdown')}</Text>
               <Divider />
 
               <View style={styles.costRow}>
                 <View style={[styles.costBar, { backgroundColor: '#FF8A80' }]}>
-                  <Text style={styles.costBarLabel}>🥕 Ingredients</Text>
+                  <Text style={styles.costBarLabel}>{t('calculator.ingredientsLabel')}</Text>
                   <Text style={styles.costBarValue}>{formatCurrency(cost.ingredientCost)}</Text>
                   <Text style={styles.costBarPct}>
                     {cost.totalCost > 0
@@ -147,7 +151,7 @@ export default function CalculatorScreen({ route }) {
 
               <View style={styles.costRow}>
                 <View style={[styles.costBar, { backgroundColor: '#82B1FF' }]}>
-                  <Text style={styles.costBarLabel}>👤 Labor</Text>
+                  <Text style={styles.costBarLabel}>{t('calculator.laborLabel')}</Text>
                   <Text style={styles.costBarValue}>{formatCurrency(cost.laborCost)}</Text>
                   <Text style={styles.costBarPct}>
                     {cost.totalCost > 0
@@ -159,7 +163,7 @@ export default function CalculatorScreen({ route }) {
 
               <View style={styles.costRow}>
                 <View style={[styles.costBar, { backgroundColor: '#FFFF8D' }]}>
-                  <Text style={styles.costBarLabel}>⚡ Overhead</Text>
+                  <Text style={styles.costBarLabel}>{t('calculator.overheadLabel')}</Text>
                   <Text style={styles.costBarValue}>{formatCurrency(cost.overheadPerDish)}</Text>
                   <Text style={styles.costBarPct}>
                     {cost.totalCost > 0
@@ -170,13 +174,13 @@ export default function CalculatorScreen({ route }) {
               </View>
 
               <View style={styles.totalRow}>
-                <Text style={styles.totalLabel}>TOTAL FOOD COST</Text>
+                <Text style={styles.totalLabel}>{t('calculator.totalFoodCost')}</Text>
                 <Text style={styles.totalValue}>{formatCurrency(cost.totalCost)}</Text>
               </View>
             </Card>
 
             {/* Price suggestions */}
-            <Text style={styles.suggestTitle}>🏷️ Suggested Menu Prices</Text>
+            <Text style={styles.suggestTitle}>{t('calculator.suggestedPrices')}</Text>
             {suggestions.map((s, i) => {
               const col = PROFIT_COLORS[i];
               const rounded = roundPrice(s.price);
@@ -190,9 +194,9 @@ export default function CalculatorScreen({ route }) {
                       <Text style={styles.pctText}>{s.percentage}%</Text>
                     </View>
                     <View>
-                      <Text style={[styles.priceLabel, { color: col.text }]}>{s.label}</Text>
+                      <Text style={[styles.priceLabel, { color: col.text }]}>{t('calculator.' + PROFIT_KEYS[i])}</Text>
                       <Text style={styles.priceNote}>
-                        Profit: {formatCurrency(s.price - cost.totalCost)}
+                        {t('calculator.profitLabel', { profit: formatCurrency(s.price - cost.totalCost) })}
                       </Text>
                     </View>
                   </View>
@@ -202,7 +206,7 @@ export default function CalculatorScreen({ route }) {
                     </Text>
                     {rounded !== Math.round(s.price) && (
                       <Text style={[styles.priceRounded, { color: col.border }]}>
-                        ≈ {formatCurrency(rounded)}
+                        {t('calculator.roundedLabel', { rounded: formatCurrency(rounded) })}
                       </Text>
                     )}
                   </View>
@@ -212,7 +216,7 @@ export default function CalculatorScreen({ route }) {
 
             {/* Custom profit */}
             <Card>
-              <Text style={styles.sectionTitle}>🎯 Custom Profit %</Text>
+              <Text style={styles.sectionTitle}>{t('calculator.customProfit')}</Text>
               <View style={styles.customRow}>
                 <View style={styles.customInputBox}>
                   <Text style={styles.customPrefix}>Profit</Text>
@@ -245,14 +249,14 @@ export default function CalculatorScreen({ route }) {
               {customPrice !== null && (
                 <View style={styles.customResult}>
                   <Text style={styles.customResultLabel}>
-                    Menu price at {customProfitInput}% profit:
+                    {t('calculator.menuPriceAt', { pct: customProfitInput })}
                   </Text>
                   <Text style={styles.customResultValue}>{formatCurrency(customPrice)}</Text>
                   <Text style={styles.customResultRounded}>
-                    Rounded: {formatCurrency(roundPrice(customPrice))}
+                    {t('calculator.roundedPrice', { rounded: formatCurrency(roundPrice(customPrice)) })}
                   </Text>
                   <Text style={styles.customResultProfit}>
-                    Profit: {formatCurrency(customPrice - cost.totalCost)} / dish
+                    {t('calculator.profitPerDish', { profit: formatCurrency(customPrice - cost.totalCost) })}
                   </Text>
                 </View>
               )}
@@ -261,7 +265,7 @@ export default function CalculatorScreen({ route }) {
             {/* Ingredient detail */}
             {selectedDish?.ingredients?.length > 0 && (
               <Card>
-                <Text style={styles.sectionTitle}>📋 Ingredient Detail</Text>
+                <Text style={styles.sectionTitle}>{t('calculator.ingredientDetail')}</Text>
                 <Divider />
                 {selectedDish.ingredients.map(item => {
                   const ing = state.ingredients.find(i => i.id === item.ingredientId);
@@ -272,7 +276,7 @@ export default function CalculatorScreen({ route }) {
                       <View style={styles.detailInfo}>
                         <Text style={styles.detailName}>{ing.name}</Text>
                         <Text style={styles.detailQty}>
-                          {item.quantity} {ing.unit} × {formatCurrency(ing.pricePerUnit)}
+                          {t('calculator.ingredientLine', { quantity: item.quantity, unit: ing.unit, price: formatCurrency(ing.pricePerUnit) })}
                         </Text>
                       </View>
                       <Text style={styles.detailCost}>{formatCurrency(itemCost)}</Text>
@@ -285,7 +289,7 @@ export default function CalculatorScreen({ route }) {
             {/* Labor detail */}
             {selectedDish?.laborTime?.length > 0 && (
               <Card>
-                <Text style={styles.sectionTitle}>⏱️ Labor Detail</Text>
+                <Text style={styles.sectionTitle}>{t('calculator.laborDetail')}</Text>
                 <Divider />
                 {selectedDish.laborTime.map(item => {
                   if (item.group) {
@@ -298,7 +302,7 @@ export default function CalculatorScreen({ route }) {
                             {item.group === 'kitchen' ? '👨‍🍳 Kitchen' : '🍽️ Waiters'}
                           </Text>
                           <Text style={styles.detailQty}>
-                            {item.minutes} min × {formatCurrency(rate)}/hr (weighted avg)
+                            {t('calculator.laborLine', { minutes: item.minutes, rate: formatCurrency(rate) })}
                           </Text>
                         </View>
                         <Text style={styles.detailCost}>{formatCurrency(itemCost)}</Text>
@@ -313,7 +317,7 @@ export default function CalculatorScreen({ route }) {
                     <View key={item.departmentId} style={styles.detailRow}>
                       <View style={styles.detailInfo}>
                         <Text style={styles.detailName}>{dept.name}</Text>
-                        <Text style={styles.detailQty}>{item.minutes} min × {formatCurrency(dept.hourlyWage)}/hr</Text>
+                        <Text style={styles.detailQty}>{t('calculator.laborLine', { minutes: item.minutes, rate: formatCurrency(dept.hourlyWage) })}</Text>
                       </View>
                       <Text style={styles.detailCost}>{formatCurrency(itemCost)}</Text>
                     </View>
@@ -323,7 +327,7 @@ export default function CalculatorScreen({ route }) {
             )}
 
             <Button
-              label="📤 Share Price Report"
+              label={t('calculator.shareReport')}
               onPress={handleShare}
               style={styles.shareBtn}
             />
