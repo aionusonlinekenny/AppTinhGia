@@ -81,6 +81,28 @@
                      border-radius: 8px; font-size: 14px; }
   .searchRow input:focus { outline: none; border-color: #E65100; }
 
+  /* Tab nav */
+  .tabNav { display: flex; gap: 4px; margin-bottom: 20px; background: rgba(255,255,255,.15);
+            border-radius: 10px; padding: 4px; width: fit-content; }
+  .tabNav button { padding: 8px 20px; border: none; border-radius: 7px; font-size: 13px;
+                   font-weight: 600; cursor: pointer; background: transparent; color: rgba(255,255,255,.75); }
+  .tabNav button.active { background: #fff; color: #E65100; }
+  .tabNav .badge-count { display: inline-block; background: #E53935; color: #fff;
+                         font-size: 10px; border-radius: 10px; padding: 1px 6px; margin-left: 4px; }
+
+  /* Order cards */
+  .orderCard { background: #fff; border-radius: 12px; padding: 16px;
+               margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  .orderTop  { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .orderName { font-size: 15px; font-weight: 700; color: #212121; }
+  .badge-pending   { background: #FFF3E0; color: #E65100; }
+  .badge-paid      { background: #E3F2FD; color: #1565C0; }
+  .badge-fulfilled { background: #E8F5E9; color: #388E3C; }
+  .badge-cancelled { background: #FAFAFA; color: #999; }
+  .orderMeta { font-size: 12px; color: #888; margin-top: 6px; }
+  .orderMeta span { margin-right: 14px; }
+  .orderActions { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+
   /* Toast */
   #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
            background: #323232; color: #fff; padding: 12px 24px; border-radius: 8px;
@@ -111,11 +133,18 @@
 <!-- MAIN -->
 <div id="mainScreen">
   <div class="topbar">
-    <h1>🗝️ License Key Manager</h1>
-    <span id="serverLabel"></span>
+    <h1>🗝️ License Manager</h1>
+    <div style="display:flex;align-items:center;gap:16px">
+      <div class="tabNav">
+        <button class="active" onclick="switchTab('keys')">🗝️ Keys</button>
+        <button onclick="switchTab('orders')">📦 Orders <span class="badge-count" id="pendingCount" style="display:none">0</span></button>
+      </div>
+      <span id="serverLabel" style="font-size:11px;opacity:.6"></span>
+    </div>
   </div>
 
-  <div class="container">
+  <!-- KEYS TAB -->
+  <div id="tabKeys" class="container">
 
     <!-- Stats -->
     <div class="statsRow">
@@ -152,6 +181,21 @@
     </div>
 
     <div id="keyList"><div class="empty">Loading...</div></div>
+  </div><!-- /tabKeys -->
+
+  <!-- ORDERS TAB -->
+  <div id="tabOrders" class="container" style="display:none">
+    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <select id="orderFilter" onchange="renderOrders()" style="padding:9px 12px;border:1.5px solid #DDD;border-radius:8px;font-size:13px">
+        <option value="all">All orders</option>
+        <option value="pending" selected>Pending</option>
+        <option value="paid">Paid</option>
+        <option value="fulfilled">Fulfilled</option>
+        <option value="cancelled">Cancelled</option>
+      </select>
+      <button class="btn btn-outline" onclick="loadOrders()">↻ Refresh</button>
+    </div>
+    <div id="orderList"><div class="empty">Loading...</div></div>
   </div>
 </div>
 
@@ -159,11 +203,21 @@
 
 <script>
 // ── Config ───────────────────────────────────────────────────────
-// Change this to your actual hosting URL
 const API_BASE = 'https://stonephovaldosta.com/license-api';
 
 let ADMIN_SECRET = '';
-let allKeys = [];
+let allKeys   = [];
+let allOrders = [];
+
+// ── Tab switching ────────────────────────────────────────────────
+function switchTab(tab) {
+  document.getElementById('tabKeys').style.display    = tab === 'keys'   ? 'block' : 'none';
+  document.getElementById('tabOrders').style.display  = tab === 'orders' ? 'block' : 'none';
+  document.querySelectorAll('.tabNav button').forEach((b, i) => {
+    b.classList.toggle('active', (i === 0 && tab === 'keys') || (i === 1 && tab === 'orders'));
+  });
+  if (tab === 'orders') loadOrders();
+}
 
 // ── Login ────────────────────────────────────────────────────────
 document.getElementById('secretInput').addEventListener('keydown', e => {
@@ -190,6 +244,7 @@ async function doLogin() {
     allKeys = data;
     renderKeys();
     updateStats();
+    loadOrders(); // load order badge count in background
   } catch(e) {
     document.getElementById('loginErr').textContent = 'Cannot connect to server';
     document.getElementById('loginErr').style.display = 'block';
@@ -280,6 +335,18 @@ async function addKey() {
     document.getElementById('newCustomer').value = '';
     document.getElementById('newNotes').value = '';
     loadKeys();
+    // If created from an order, auto-fulfill it (sends key email to customer)
+    if (window._pendingOrderId) {
+      const orderId = window._pendingOrderId;
+      window._pendingOrderId = null;
+      const fres = await fetch(`${API_BASE}/admin-orders.php`, {
+        method: 'POST',
+        headers: { 'X-Admin-Secret': ADMIN_SECRET, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: orderId, action: 'fulfill', key }),
+      });
+      const fdata = await fres.json();
+      if (fdata.success) toast(`✅ Key emailed to customer (Order #${orderId})`);
+    }
   } else {
     toast('❌ ' + (data.error || 'Failed to add key'));
   }
@@ -326,6 +393,102 @@ function toast(msg) {
   el.style.display = 'block';
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.style.display = 'none', 3000);
+}
+
+// ── Orders ────────────────────────────────────────────────────────
+async function loadOrders() {
+  const res = await fetch(`${API_BASE}/admin-orders.php`, {
+    headers: { 'X-Admin-Secret': ADMIN_SECRET }
+  });
+  allOrders = await res.json();
+  renderOrders();
+  // Badge count for pending+paid
+  const pending = allOrders.filter(o => o.status === 'pending' || o.status === 'paid').length;
+  const badge = document.getElementById('pendingCount');
+  badge.textContent = pending;
+  badge.style.display = pending > 0 ? 'inline-block' : 'none';
+}
+
+function renderOrders() {
+  const filter = document.getElementById('orderFilter').value;
+  const list   = filter === 'all' ? allOrders : allOrders.filter(o => o.status === filter);
+  const el     = document.getElementById('orderList');
+
+  if (list.length === 0) { el.innerHTML = '<div class="empty">No orders found</div>'; return; }
+
+  const priceMap = { '1': '$5/mo', '2': '$8/mo', '3': '$10/mo' };
+
+  el.innerHTML = list.map(o => {
+    const badgeClass = { pending:'badge-pending', paid:'badge-paid',
+                         fulfilled:'badge-fulfilled', cancelled:'badge-cancelled' }[o.status] || '';
+    const label = { pending:'⏳ Pending', paid:'💳 Paid', fulfilled:'✅ Fulfilled', cancelled:'✗ Cancelled' }[o.status] || o.status;
+    const price = priceMap[o.devices] || `${o.devices} devices`;
+    const keyInfo = o.fulfilled_key ? `<span>🗝️ ${o.fulfilled_key}</span>` : '';
+    return `
+    <div class="orderCard" id="ord-${o.id}">
+      <div class="orderTop">
+        <span class="orderName">${o.restaurant}</span>
+        <span class="badge ${badgeClass}">${label}</span>
+        <span style="font-size:13px;font-weight:700;color:#E65100">${price}</span>
+      </div>
+      <div class="orderMeta">
+        <span>👤 ${o.name}</span>
+        <span>✉️ <a href="mailto:${o.email}" style="color:#1565C0">${o.email}</a></span>
+        ${o.phone ? `<span>📞 ${o.phone}</span>` : ''}
+        ${o.device_id ? `<span style="font-family:monospace;font-size:11px">📱 ${o.device_id}</span>` : ''}
+        <span>📅 ${o.created_at ? o.created_at.split(' ')[0] : '—'}</span>
+        ${keyInfo}
+      </div>
+      ${o.notes ? `<div style="font-size:12px;color:#888;margin-top:4px">📝 ${o.notes}</div>` : ''}
+      <div class="orderActions">
+        ${o.status === 'pending' ? `<button class="btn btn-warning btn-sm" onclick="markPaid(${o.id})">💳 Mark Paid</button>` : ''}
+        ${(o.status === 'pending' || o.status === 'paid') ? `
+          <button class="btn btn-success btn-sm" onclick="prefillAndCreateKey('${o.restaurant}', '${o.email}', ${o.id}, ${o.devices})">🗝️ Create &amp; Send Key</button>
+        ` : ''}
+        ${o.status !== 'cancelled' && o.status !== 'fulfilled' ? `
+          <button class="btn btn-outline btn-sm" onclick="cancelOrder(${o.id})">✕ Cancel</button>
+        ` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function markPaid(id) {
+  const res  = await fetch(`${API_BASE}/admin-orders.php`, {
+    method: 'POST',
+    headers: { 'X-Admin-Secret': ADMIN_SECRET, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, action: 'mark-paid' }),
+  });
+  const data = await res.json();
+  if (data.success) { toast('✅ Marked as paid'); loadOrders(); }
+  else toast('❌ ' + data.error);
+}
+
+async function cancelOrder(id) {
+  if (!confirm('Cancel this order?')) return;
+  const res  = await fetch(`${API_BASE}/admin-orders.php`, {
+    method: 'POST',
+    headers: { 'X-Admin-Secret': ADMIN_SECRET, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, action: 'cancel' }),
+  });
+  const data = await res.json();
+  if (data.success) { toast('✅ Order cancelled'); loadOrders(); }
+  else toast('❌ ' + data.error);
+}
+
+// Pre-fill the key creation form with order data, switch to Keys tab
+function prefillAndCreateKey(restaurant, email, orderId, devices) {
+  switchTab('keys');
+  generateKey(); // auto-generate a key code
+  document.getElementById('newCustomer').value = restaurant;
+  document.getElementById('newNotes').value    = `Order #${orderId} — ${email}`;
+  const sel = document.getElementById('newMaxDevices');
+  if (sel) { sel.value = devices <= 3 ? devices : 1; }
+  // Scroll to add form
+  document.querySelector('.addCard').scrollIntoView({ behavior: 'smooth' });
+  // Store orderId so addKey() can fulfill it after creation
+  window._pendingOrderId = orderId;
+  toast('⬆️ Key form filled — click Add Key to create and email to customer');
 }
 </script>
 </body>

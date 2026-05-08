@@ -40,6 +40,23 @@
   .orderCard h2 { font-size: 18px; font-weight: 700; color: #E65100; margin-bottom: 6px; }
   .orderCard p  { font-size: 13px; color: #888; margin-bottom: 24px; }
 
+  /* Payment step */
+  .payStep { display: none; }
+  .payStep h3 { font-size: 18px; font-weight: 700; color: #212121; margin-bottom: 8px; }
+  .payStep .step { display: flex; gap: 14px; align-items: flex-start;
+                   background: #F9F9F9; border-radius: 12px; padding: 16px;
+                   margin-bottom: 12px; }
+  .payStep .step-num { width: 28px; height: 28px; background: #E65100; color: #fff;
+                       border-radius: 50%; display: flex; align-items: center;
+                       justify-content: center; font-weight: 800; font-size: 14px; flex-shrink:0; }
+  .payStep .step-body strong { display: block; font-size: 14px; margin-bottom: 3px; }
+  .payStep .step-body p { font-size: 13px; color: #666; margin: 0; }
+  .paypalBtn { display: block; text-align: center; background: #0070BA; color: #fff;
+               font-size: 16px; font-weight: 700; padding: 16px; border-radius: 12px;
+               text-decoration: none; margin: 20px 0 12px; transition: opacity .15s; }
+  .paypalBtn:hover { opacity: .88; }
+  .payNote { font-size: 12px; color: #aaa; text-align: center; }
+
   .field { margin-bottom: 16px; }
   .field label { display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 6px; }
   .field input, .field textarea, .field select {
@@ -160,10 +177,38 @@
       <p id="errMsg"></p>
     </form>
 
-    <div id="successMsg">
-      <h3>✅ Order received!</h3>
-      <p>Thank you! We'll send your license key to your email within 24 hours.<br>
-         If you don't hear back, check your spam folder or contact us directly.</p>
+    <!-- Step 2: Payment -->
+    <div id="payStep" class="payStep">
+      <h3>✅ Order saved — complete payment</h3>
+      <p style="margin-bottom:18px">One more step: send the payment via PayPal to confirm your order.</p>
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <strong>Order registered</strong>
+          <p>Your order details have been saved. We'll send your key once payment is confirmed.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <strong>Pay <span id="payAmount">$5.00</span> via PayPal</strong>
+          <p>Click the button below. In the PayPal note, include your email address.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <strong>Receive your key by email</strong>
+          <p>We'll email your license key within 24 hours of payment confirmation.</p>
+        </div>
+      </div>
+
+      <a id="paypalLink" href="https://www.paypal.com/ncp/payment/A6JDMZZCNJTQL"
+         target="_blank" class="paypalBtn">💳 Pay with PayPal</a>
+      <p class="payNote">You'll be redirected to PayPal's secure payment page.</p>
     </div>
   </div>
 
@@ -197,6 +242,8 @@
 <footer>Menu Cost Pro &copy; 2025 · <a href="mailto:support@stonephovaldosta.com">support@stonephovaldosta.com</a></footer>
 
 <script>
+const PRICE_MAP = { '1': '$5.00', '2': '$8.00', '3': '$10.00' };
+
 document.getElementById('orderForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   const btn = document.getElementById('submitBtn');
@@ -204,12 +251,13 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
   btn.textContent = 'Sending...';
   document.getElementById('errMsg').style.display = 'none';
 
+  const devices = document.getElementById('devices').value;
   const payload = {
     name:       document.getElementById('name').value.trim(),
     email:      document.getElementById('email').value.trim(),
     restaurant: document.getElementById('restaurant').value.trim(),
     phone:      document.getElementById('phone').value.trim(),
-    devices:    document.getElementById('devices').value,
+    devices:    devices,
     deviceId:   document.getElementById('deviceId').value.trim(),
     notes:      document.getElementById('notes').value.trim(),
   };
@@ -223,7 +271,8 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
     const data = await res.json();
     if (data.success) {
       document.getElementById('orderForm').style.display = 'none';
-      document.getElementById('successMsg').style.display = 'block';
+      document.getElementById('payAmount').textContent = PRICE_MAP[devices] || '$5.00';
+      document.getElementById('payStep').style.display = 'block';
     } else {
       throw new Error(data.error || 'Server error');
     }
