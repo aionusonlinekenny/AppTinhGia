@@ -6,23 +6,19 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLicense } from '../context/LicenseContext';
 import { COLORS } from '../components';
+import { useI18n } from '../i18n';
+import { strings } from '../i18n/strings';
 
 const STORE_URL = 'https://stonephovaldosta.com/license-api/store.html';
-
-const FEATURES = [
-  '✅ Unlimited menu items & recipes',
-  '✅ Ingredient & supply cost tracking',
-  '✅ Broth / stock batch costing',
-  '✅ Staff payroll & labor costing',
-  '✅ Dish profitability reports',
-  '✅ Offline — works without internet',
-];
 
 // ── Purchase modal ────────────────────────────────────────────────
 function PurchaseModal({ visible, onClose }) {
   const { activate, activating, error, deviceId } = useLicense();
+  const { t, language } = useI18n();
   const [key, setKey] = useState('');
   const [tab, setTab] = useState('buy'); // 'buy' | 'activate'
+
+  const features = strings[language]?.license?.features || strings.en.license.features;
 
   function formatKey(raw) {
     const clean = raw.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 16);
@@ -40,7 +36,7 @@ function PurchaseModal({ visible, onClose }) {
           <ScrollView contentContainerStyle={pm.scroll} keyboardShouldPersistTaps="handled">
             {/* Header */}
             <View style={pm.header}>
-              <Text style={pm.headerTitle}>Menu Cost Pro</Text>
+              <Text style={pm.headerTitle}>{t('home.title')}</Text>
               <TouchableOpacity onPress={onClose} style={pm.closeBtn}>
                 <Text style={pm.closeText}>✕</Text>
               </TouchableOpacity>
@@ -49,13 +45,13 @@ function PurchaseModal({ visible, onClose }) {
             {/* Price badge */}
             <View style={pm.priceBadge}>
               <Text style={pm.priceAmount}>$4.99</Text>
-              <Text style={pm.pricePer}>/month</Text>
+              <Text style={pm.pricePer}>{t('license.perMonth')}</Text>
             </View>
-            <Text style={pm.priceNote}>per restaurant · cancel anytime</Text>
+            <Text style={pm.priceNote}>{t('license.perRestaurant')}</Text>
 
             {/* Features */}
             <View style={pm.featureBox}>
-              {FEATURES.map((f, i) => (
+              {features.map((f, i) => (
                 <Text key={i} style={pm.featureRow}>{f}</Text>
               ))}
             </View>
@@ -66,38 +62,33 @@ function PurchaseModal({ visible, onClose }) {
                 style={[pm.tabBtn, tab === 'buy' && pm.tabActive]}
                 onPress={() => setTab('buy')}
               >
-                <Text style={[pm.tabText, tab === 'buy' && pm.tabTextActive]}>Buy License</Text>
+                <Text style={[pm.tabText, tab === 'buy' && pm.tabTextActive]}>{t('license.licenseTab')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[pm.tabBtn, tab === 'activate' && pm.tabActive]}
                 onPress={() => setTab('activate')}
               >
-                <Text style={[pm.tabText, tab === 'activate' && pm.tabTextActive]}>Enter Key</Text>
+                <Text style={[pm.tabText, tab === 'activate' && pm.tabTextActive]}>{t('license.enterKeyTab')}</Text>
               </TouchableOpacity>
             </View>
 
             {tab === 'buy' ? (
               <View style={pm.tabContent}>
-                <Text style={pm.buyInfo}>
-                  Place your order on our website. You will receive a license key
-                  by email within 24 hours.
-                </Text>
+                <Text style={pm.buyInfo}>{t('license.buyInfo')}</Text>
                 <TouchableOpacity style={pm.buyBtn} onPress={handleBuyNow}>
-                  <Text style={pm.buyBtnText}>🛒 Buy Now — $4.99/month</Text>
+                  <Text style={pm.buyBtnText}>{t('license.buyNow')}</Text>
                 </TouchableOpacity>
-                <Text style={pm.deviceIdLabel}>Your Device ID (include in order):</Text>
+                <Text style={pm.deviceIdLabel}>{t('license.deviceIdLabel')}</Text>
                 <Text style={pm.deviceIdValue} selectable>{deviceId}</Text>
               </View>
             ) : (
               <View style={pm.tabContent}>
-                <Text style={pm.buyInfo}>
-                  Already purchased? Enter your license key below.
-                </Text>
+                <Text style={pm.buyInfo}>{t('license.alreadyPurchased')}</Text>
                 <TextInput
                   style={pm.keyInput}
                   value={key}
                   onChangeText={v => setKey(formatKey(v))}
-                  placeholder="XXXX-XXXX-XXXX-XXXX"
+                  placeholder={t('license.keyPlaceholder')}
                   placeholderTextColor={COLORS.textLight}
                   autoCapitalize="characters"
                   autoCorrect={false}
@@ -111,7 +102,7 @@ function PurchaseModal({ visible, onClose }) {
                 >
                   {activating
                     ? <ActivityIndicator color="#FFF" />
-                    : <Text style={pm.activateBtnText}>Activate</Text>
+                    : <Text style={pm.activateBtnText}>{t('license.activate')}</Text>
                   }
                 </TouchableOpacity>
               </View>
@@ -126,6 +117,7 @@ function PurchaseModal({ visible, onClose }) {
 // ── Trial banner shown at top of app ─────────────────────────────
 export function TrialBanner() {
   const { daysLeft } = useLicense();
+  const { t } = useI18n();
   const [dismissed, setDismissed] = useState(false);
   const [showPurchase, setShowPurchase] = useState(false);
   if (dismissed) return null;
@@ -133,7 +125,10 @@ export function TrialBanner() {
     <>
       <TouchableOpacity style={styles.banner} onPress={() => setShowPurchase(true)} activeOpacity={0.85}>
         <Text style={styles.bannerText}>
-          ⏳ Trial — {daysLeft} day{daysLeft !== 1 ? 's' : ''} remaining · Tap to upgrade $4.99/mo
+          {daysLeft === 1
+            ? t('license.trialBanner', { daysLeft })
+            : t('license.trialBannerPlural', { daysLeft })
+          }
         </Text>
         <TouchableOpacity onPress={() => setDismissed(true)} style={styles.bannerClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Text style={styles.bannerCloseText}>✕</Text>
@@ -147,12 +142,13 @@ export function TrialBanner() {
 // ── Full-screen lock shown when trial expired ─────────────────────
 export function LicenseGate({ children }) {
   const { status } = useLicense();
+  const { t } = useI18n();
 
   if (status === 'loading') {
     return (
       <View style={styles.loadingScreen}>
         <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.loadingText}>Loading...</Text>
+        <Text style={styles.loadingText}>{t('license.loading')}</Text>
       </View>
     );
   }
@@ -172,8 +168,11 @@ export function LicenseGate({ children }) {
 // ── Full-screen activation / expired screen ───────────────────────
 function ActivationScreen() {
   const { activate, activating, error, deviceId } = useLicense();
+  const { t, language } = useI18n();
   const [key, setKey] = useState('');
   const [showBuy, setShowBuy] = useState(false);
+
+  const features = strings[language]?.license?.features || strings.en.license.features;
 
   function formatKey(raw) {
     const clean = raw.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 16);
@@ -184,20 +183,20 @@ function ActivationScreen() {
     <SafeAreaView style={styles.screen}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <Text style={styles.lockIcon}>🔐</Text>
-        <Text style={styles.title}>Menu Cost Pro</Text>
-        <Text style={styles.subtitle}>Your free trial has ended</Text>
+        <Text style={styles.title}>{t('home.title')}</Text>
+        <Text style={styles.subtitle}>{t('license.trialEnded')}</Text>
 
         {/* Pricing card */}
         <TouchableOpacity style={styles.pricingCard} onPress={() => setShowBuy(true)} activeOpacity={0.9}>
           <View style={styles.pricingTop}>
             <View>
-              <Text style={styles.pricingAmount}>$4.99<Text style={styles.pricingPer}>/mo</Text></Text>
-              <Text style={styles.pricingNote}>per restaurant · cancel anytime</Text>
+              <Text style={styles.pricingAmount}>$4.99<Text style={styles.pricingPer}>{t('license.perMonth')}</Text></Text>
+              <Text style={styles.pricingNote}>{t('license.perRestaurant')}</Text>
             </View>
             <Text style={styles.pricingArrow}>›</Text>
           </View>
           <View style={styles.pricingFeatures}>
-            {FEATURES.slice(0, 3).map((f, i) => (
+            {features.slice(0, 3).map((f, i) => (
               <Text key={i} style={styles.pricingFeatureText}>{f}</Text>
             ))}
             <Text style={styles.pricingMore}>+ more →</Text>
@@ -206,12 +205,12 @@ function ActivationScreen() {
 
         {/* Activation card */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Already have a key?</Text>
+          <Text style={styles.cardTitle}>{t('license.alreadyHaveKey')}</Text>
           <TextInput
             style={styles.keyInput}
             value={key}
             onChangeText={v => setKey(formatKey(v))}
-            placeholder="XXXX-XXXX-XXXX-XXXX"
+            placeholder={t('license.keyPlaceholder')}
             placeholderTextColor={COLORS.textLight}
             autoCapitalize="characters"
             autoCorrect={false}
@@ -225,7 +224,7 @@ function ActivationScreen() {
           >
             {activating
               ? <ActivityIndicator color="#FFF" />
-              : <Text style={styles.activateBtnText}>Activate</Text>
+              : <Text style={styles.activateBtnText}>{t('license.activate')}</Text>
             }
           </TouchableOpacity>
         </View>
