@@ -10,7 +10,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   useApp,
-  formatCurrency,
   calculateDishCost,
   calcSalesBreakdown,
   generateId,
@@ -19,17 +18,14 @@ import {
   formatWeekRange,
 } from '../context/AppContext';
 import { COLORS, Card, Divider, Button, Input } from '../components';
-
-const QUICK_ACTIONS = [
-  { icon: '👥', label: 'Staff', tab: 'Staff', color: '#E3F2FD' },
-  { icon: '🥕', label: 'Ingredients', tab: 'Ingredients', color: '#E8F5E9' },
-  { icon: '⚡', label: 'Overhead', tab: 'Overhead', color: '#FFF8E1' },
-  { icon: '🍽️', label: 'Dishes', tab: 'Dishes', color: '#FCE4EC' },
-];
+import { useI18n } from '../i18n';
+import SettingsModal from './SettingsModal';
 
 export default function HomeScreen({ navigation }) {
   const { state, dispatch } = useApp();
   const { departments, ingredients, overheadCosts, dishes, settings, salesRecords } = state;
+  const { t, formatCurrency } = useI18n();
+  const [settingsVisible, setSettingsVisible] = useState(false);
 
   // Sales week state
   const [salesWeekOf, setSalesWeekOf] = useState(getWeekOf());
@@ -109,31 +105,43 @@ export default function HomeScreen({ navigation }) {
   const previewGross = Number(salesForm.grossSales) || 0;
   const previewBreakdown = previewGross > 0 ? calcSalesBreakdown(previewGross, taxRate) : null;
 
+  const QUICK_ACTIONS = [
+    { icon: '👥', label: t('home.staff'), tab: 'Staff', color: '#E3F2FD' },
+    { icon: '🥕', label: t('tabs.ingredients'), tab: 'Ingredients', color: '#E8F5E9' },
+    { icon: '⚡', label: t('home.overhead'), tab: 'Overhead', color: '#FFF8E1' },
+    { icon: '🍽️', label: t('tabs.dishes'), tab: 'Dishes', color: '#FCE4EC' },
+  ];
+
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <View style={styles.headerBg}>
         <View style={styles.headerContent}>
           <View>
             <Text style={styles.greeting}>Welcome! 👋</Text>
-            <Text style={styles.appName}>Menu Cost Pro</Text>
-            <Text style={styles.subtitle}>Calculate food cost & maximize restaurant profit</Text>
+            <Text style={styles.appName}>{t('home.title')}</Text>
+            <Text style={styles.subtitle}>{t('home.subtitle')}</Text>
           </View>
-          <View style={styles.logoBox}>
-            <Text style={styles.logoIcon}>🍴</Text>
+          <View style={styles.headerRight}>
+            <TouchableOpacity onPress={() => setSettingsVisible(true)} style={styles.settingsBtn}>
+              <Text style={styles.settingsIcon}>⚙️</Text>
+            </TouchableOpacity>
+            <View style={styles.logoBox}>
+              <Text style={styles.logoIcon}>🍴</Text>
+            </View>
           </View>
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow}>
-          <View style={styles.chip}><Text style={styles.chipValue}>{dishes.length}</Text><Text style={styles.chipLabel}>Dishes</Text></View>
-          <View style={styles.chip}><Text style={styles.chipValue}>{ingredients.length}</Text><Text style={styles.chipLabel}>Ingredients</Text></View>
-          <View style={styles.chip}><Text style={styles.chipValue}>{departments.length}</Text><Text style={styles.chipLabel}>Departments</Text></View>
-          <View style={styles.chip}><Text style={styles.chipValue}>{overheadCosts.length}</Text><Text style={styles.chipLabel}>Costs</Text></View>
-          <View style={styles.chip}><Text style={styles.chipValue}>{salesRecords.length}</Text><Text style={styles.chipLabel}>Sales Weeks</Text></View>
+          <View style={styles.chip}><Text style={styles.chipValue}>{dishes.length}</Text><Text style={styles.chipLabel}>{t('home.dishes')}</Text></View>
+          <View style={styles.chip}><Text style={styles.chipValue}>{ingredients.length}</Text><Text style={styles.chipLabel}>{t('home.ingredients')}</Text></View>
+          <View style={styles.chip}><Text style={styles.chipValue}>{departments.length}</Text><Text style={styles.chipLabel}>{t('home.departments')}</Text></View>
+          <View style={styles.chip}><Text style={styles.chipValue}>{overheadCosts.length}</Text><Text style={styles.chipLabel}>{t('home.costs')}</Text></View>
+          <View style={styles.chip}><Text style={styles.chipValue}>{salesRecords.length}</Text><Text style={styles.chipLabel}>{t('home.salesWeeks')}</Text></View>
         </ScrollView>
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Quick actions */}
-        <Text style={styles.sectionTitle}>⚡ Quick Access</Text>
+        <Text style={styles.sectionTitle}>{t('home.quickAccess')}</Text>
         <View style={styles.quickGrid}>
           {QUICK_ACTIONS.map(action => (
             <TouchableOpacity
@@ -149,7 +157,7 @@ export default function HomeScreen({ navigation }) {
         </View>
 
         {/* ── WEEKLY SALES & INCOME ── */}
-        <Text style={styles.sectionTitle}>💵 Weekly Income</Text>
+        <Text style={styles.sectionTitle}>{t('home.weeklyIncome')}</Text>
         {/* Week navigator */}
         <View style={styles.salesWeekNav}>
           <TouchableOpacity onPress={() => setSalesWeekOf(w => offsetWeek(w, -1))} style={styles.salesWeekArrow}>
@@ -166,28 +174,28 @@ export default function HomeScreen({ navigation }) {
             {/* Gross / Net / Tax */}
             <View style={styles.salesTopRow}>
               <View style={styles.salesMainItem}>
-                <Text style={styles.salesMainLabel}>Gross Sales (incl. tax)</Text>
+                <Text style={styles.salesMainLabel}>{t('home.grossSales')}</Text>
                 <Text style={styles.salesMainValue}>{formatCurrency(currentSalesRec.grossSales)}</Text>
               </View>
             </View>
             <Divider />
             <View style={styles.salesBreakRow}>
               <View style={styles.salesBreakItem}>
-                <Text style={styles.salesBreakLabel}>Net Sales</Text>
+                <Text style={styles.salesBreakLabel}>{t('home.netSales')}</Text>
                 <Text style={styles.salesBreakValue}>{formatCurrency(salesBreakdown?.netSales || 0)}</Text>
                 <Text style={styles.salesBreakSub}>÷ 1.{(currentSalesRec.taxRate || taxRate).toString().padStart(2, '0')}</Text>
               </View>
               <View style={styles.salesBreakDivider} />
               <View style={styles.salesBreakItem}>
-                <Text style={styles.salesBreakLabel}>Sales Tax ({currentSalesRec.taxRate || taxRate}%)</Text>
+                <Text style={styles.salesBreakLabel}>{t('home.salesTax', { rate: currentSalesRec.taxRate || taxRate })}</Text>
                 <Text style={[styles.salesBreakValue, styles.taxValue]}>
                   {formatCurrency(salesBreakdown?.taxCollected || 0)}
                 </Text>
-                <Text style={styles.salesBreakSub}>collected</Text>
+                <Text style={styles.salesBreakSub}>{t('home.collected')}</Text>
               </View>
               <View style={styles.salesBreakDivider} />
               <View style={styles.salesBreakItem}>
-                <Text style={styles.salesBreakLabel}>Total Tips</Text>
+                <Text style={styles.salesBreakLabel}>{t('home.totalTips')}</Text>
                 <Text style={[styles.salesBreakValue, styles.tipsValue]}>{formatCurrency(totalTips)}</Text>
                 <Text style={styles.salesBreakSub}>
                   💳 {formatCurrency(currentSalesRec.cardTips || 0)} · 💵 {formatCurrency(currentSalesRec.cashTips || 0)}
@@ -196,7 +204,7 @@ export default function HomeScreen({ navigation }) {
             </View>
             <View style={styles.salesActions}>
               <TouchableOpacity onPress={openSalesModal} style={styles.salesEditBtn}>
-                <Text style={styles.salesEditText}>✏️ Edit</Text>
+                <Text style={styles.salesEditText}>{t('home.editBtn')}</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={handleDeleteSales} style={styles.salesDeleteBtn}>
                 <Text style={styles.salesDeleteText}>🗑️</Text>
@@ -206,35 +214,35 @@ export default function HomeScreen({ navigation }) {
         ) : (
           <TouchableOpacity style={styles.salesEmptyCard} onPress={openSalesModal}>
             <Text style={styles.salesEmptyIcon}>📊</Text>
-            <Text style={styles.salesEmptyTitle}>Log this week's sales</Text>
+            <Text style={styles.salesEmptyTitle}>{t('home.logWeekSales')}</Text>
             <Text style={styles.salesEmptyDesc}>
-              Record gross income (including {taxRate}% sales tax) and tips collected
+              {t('home.logWeekDesc', { rate: settings.salesTaxRate })}
             </Text>
             <View style={styles.salesEmptyBtn}>
-              <Text style={styles.salesEmptyBtnText}>+ Add Sales Record</Text>
+              <Text style={styles.salesEmptyBtnText}>{t('home.addSalesRecord')}</Text>
             </View>
           </TouchableOpacity>
         )}
 
         {/* Monthly Financial Overview */}
-        <Text style={styles.sectionTitle}>📊 Monthly Financial Overview</Text>
+        <Text style={styles.sectionTitle}>{t('home.monthlyOverview')}</Text>
         <Card>
           <View style={styles.finRow}>
             <View style={styles.finItem}>
               <Text style={styles.finIcon}>💼</Text>
-              <Text style={styles.finLabel}>Total Wages</Text>
+              <Text style={styles.finLabel}>{t('home.totalWages')}</Text>
               <Text style={styles.finValue}>{formatCurrency(totalMonthlyWages)}</Text>
             </View>
             <View style={styles.finDivider} />
             <View style={styles.finItem}>
               <Text style={styles.finIcon}>🏭</Text>
-              <Text style={styles.finLabel}>Overhead Costs</Text>
+              <Text style={styles.finLabel}>{t('home.overheadCosts')}</Text>
               <Text style={styles.finValue}>{formatCurrency(totalMonthlyOverhead)}</Text>
             </View>
           </View>
           <Divider />
           <View style={styles.totalFixed}>
-            <Text style={styles.totalFixedLabel}>Total Fixed Costs / month</Text>
+            <Text style={styles.totalFixedLabel}>{t('home.totalFixedCosts')}</Text>
             <Text style={styles.totalFixedValue}>{formatCurrency(totalFixed)}</Text>
           </View>
           <View style={styles.perDishRow}>
@@ -242,7 +250,7 @@ export default function HomeScreen({ navigation }) {
               📅 {settings.workingDaysPerMonth} days/mo · 🍽️ {settings.totalDishesPerDay} dishes/day
             </Text>
             <Text style={styles.perDishValue}>
-              Overhead / dish: {formatCurrency(
+              {t('home.overheadPerDish')}: {formatCurrency(
                 (settings.workingDaysPerMonth * settings.totalDishesPerDay) > 0
                   ? totalFixed / (settings.workingDaysPerMonth * settings.totalDishesPerDay)
                   : 0
@@ -254,22 +262,22 @@ export default function HomeScreen({ navigation }) {
         {/* Dish insights */}
         {dishes.length > 0 && (
           <>
-            <Text style={styles.sectionTitle}>🔍 Dish Insights</Text>
+            <Text style={styles.sectionTitle}>{t('home.dishInsights')}</Text>
             <View style={styles.insightRow}>
               <Card style={styles.insightCard}>
                 <Text style={styles.insightIcon}>📈</Text>
-                <Text style={styles.insightLabel}>Avg Cost</Text>
+                <Text style={styles.insightLabel}>{t('home.avgCost')}</Text>
                 <Text style={styles.insightValue}>{formatCurrency(avgCost)}</Text>
               </Card>
               <Card style={styles.insightCard}>
                 <Text style={styles.insightIcon}>💸</Text>
-                <Text style={styles.insightLabel}>Most Expensive</Text>
+                <Text style={styles.insightLabel}>{t('home.mostExpensive')}</Text>
                 <Text style={styles.insightValue}>{mostExpensive ? formatCurrency(mostExpensive.cost.totalCost) : '-'}</Text>
                 {mostExpensive && <Text style={styles.insightSub}>{mostExpensive.dish.name}</Text>}
               </Card>
               <Card style={styles.insightCard}>
                 <Text style={styles.insightIcon}>🪙</Text>
-                <Text style={styles.insightLabel}>Cheapest</Text>
+                <Text style={styles.insightLabel}>{t('home.cheapest')}</Text>
                 <Text style={styles.insightValue}>{cheapest ? formatCurrency(cheapest.cost.totalCost) : '-'}</Text>
                 {cheapest && <Text style={styles.insightSub}>{cheapest.dish.name}</Text>}
               </Card>
@@ -280,7 +288,7 @@ export default function HomeScreen({ navigation }) {
         {/* Dish list preview */}
         {dishes.length > 0 && (
           <>
-            <Text style={styles.sectionTitle}>🍽️ Dish Cost List</Text>
+            <Text style={styles.sectionTitle}>{t('home.dishCostList')}</Text>
             <Card>
               {dishCosts.slice(0, 5).map((dc, i) => (
                 <TouchableOpacity
@@ -301,7 +309,7 @@ export default function HomeScreen({ navigation }) {
               ))}
               {dishes.length > 5 && (
                 <TouchableOpacity style={styles.viewAllBtn} onPress={() => navigation.navigate('Dishes')}>
-                  <Text style={styles.viewAllText}>View all {dishes.length} dishes →</Text>
+                  <Text style={styles.viewAllText}>{t('home.viewAllDishes', { count: dishes.length })}</Text>
                 </TouchableOpacity>
               )}
             </Card>
@@ -311,13 +319,13 @@ export default function HomeScreen({ navigation }) {
         {/* Getting started */}
         {dishes.length === 0 && (
           <Card style={styles.startCard}>
-            <Text style={styles.startTitle}>🚀 Get Started</Text>
-            <Text style={styles.startDesc}>Complete these steps to accurately calculate food cost per dish:</Text>
+            <Text style={styles.startTitle}>{t('home.getStarted')}</Text>
+            <Text style={styles.startDesc}>{t('home.getStartedDesc')}</Text>
             {[
-              { done: departments.length > 0, text: 'Enter staff wages by department' },
-              { done: ingredients.length > 0, text: 'Add ingredients and prices' },
-              { done: overheadCosts.length > 0, text: 'Enter overhead costs (electricity, rent...)' },
-              { done: dishes.length > 0, text: 'Create recipes for each dish' },
+              { done: departments.length > 0, text: t('home.step1') },
+              { done: ingredients.length > 0, text: t('home.step2') },
+              { done: overheadCosts.length > 0, text: t('home.step3') },
+              { done: dishes.length > 0, text: t('home.step4') },
             ].map((step, i) => (
               <View key={i} style={styles.startStep}>
                 <Text style={[styles.startStepIcon, step.done && styles.stepDone]}>
@@ -336,15 +344,15 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
             <Text style={styles.modalTitle}>
-              {currentSalesRec ? 'Edit Weekly Sales' : 'Log Weekly Sales'}
+              {currentSalesRec ? t('home.editWeeklySales') : t('home.logWeeklySales')}
             </Text>
             <Text style={styles.modalWeek}>{formatWeekRange(salesWeekOf)}</Text>
 
             <Input
-              label={`Gross Sales (includes ${taxRate}% sales tax)`}
+              label={t('home.grossSalesInput', { rate: settings.salesTaxRate })}
               value={salesForm.grossSales}
               onChangeText={v => setSalesForm(f => ({ ...f, grossSales: v }))}
-              placeholder="e.g. 12500.00"
+              placeholder={t('home.grossPlaceholder')}
               keyboardType="numeric"
               right="$"
               error={salesErrors.grossSales}
@@ -354,11 +362,11 @@ export default function HomeScreen({ navigation }) {
             {previewBreakdown && (
               <View style={styles.taxPreview}>
                 <View style={styles.taxPreviewRow}>
-                  <Text style={styles.taxPreviewLabel}>Net Sales (before tax)</Text>
+                  <Text style={styles.taxPreviewLabel}>{t('home.netSalesLabel')}</Text>
                   <Text style={styles.taxPreviewVal}>{formatCurrency(previewBreakdown.netSales)}</Text>
                 </View>
                 <View style={styles.taxPreviewRow}>
-                  <Text style={styles.taxPreviewLabel}>Sales Tax ({taxRate}%)</Text>
+                  <Text style={styles.taxPreviewLabel}>{t('home.salesTax', { rate: taxRate })}</Text>
                   <Text style={[styles.taxPreviewVal, { color: '#C62828' }]}>
                     {formatCurrency(previewBreakdown.taxCollected)}
                   </Text>
@@ -369,7 +377,7 @@ export default function HomeScreen({ navigation }) {
             <View style={styles.row2}>
               <View style={{ flex: 1, marginRight: 8 }}>
                 <Input
-                  label="Card Tips 💳"
+                  label={t('home.cardTips')}
                   value={salesForm.cardTips}
                   onChangeText={v => setSalesForm(f => ({ ...f, cardTips: v }))}
                   placeholder="0.00"
@@ -379,7 +387,7 @@ export default function HomeScreen({ navigation }) {
               </View>
               <View style={{ flex: 1 }}>
                 <Input
-                  label="Cash Tips 💵"
+                  label={t('home.cashTips')}
                   value={salesForm.cashTips}
                   onChangeText={v => setSalesForm(f => ({ ...f, cashTips: v }))}
                   placeholder="0.00"
@@ -391,23 +399,25 @@ export default function HomeScreen({ navigation }) {
 
             {(Number(salesForm.cardTips) > 0 || Number(salesForm.cashTips) > 0) && (
               <View style={styles.tipsPreview}>
-                <Text style={styles.tipsPreviewLabel}>Total Tips this week</Text>
+                <Text style={styles.tipsPreviewLabel}>{t('home.totalTipsWeek')}</Text>
                 <Text style={styles.tipsPreviewVal}>
                   {formatCurrency((Number(salesForm.cardTips) || 0) + (Number(salesForm.cashTips) || 0))}
                 </Text>
                 <Text style={styles.tipsPreviewHint}>
-                  Allocate these in the Payroll tab under Staff
+                  {t('home.tipsNote')}
                 </Text>
               </View>
             )}
 
             <View style={styles.modalActions}>
-              <Button label="Cancel" variant="outline" onPress={() => setSalesModalVisible(false)} style={{ flex: 1, marginRight: 8 }} />
-              <Button label={currentSalesRec ? 'Update' : 'Save'} onPress={handleSaveSales} style={{ flex: 1 }} />
+              <Button label={t('common.cancel')} variant="outline" onPress={() => setSalesModalVisible(false)} style={{ flex: 1, marginRight: 8 }} />
+              <Button label={currentSalesRec ? t('common.update') : t('common.save')} onPress={handleSaveSales} style={{ flex: 1 }} />
             </View>
           </View>
         </View>
       </Modal>
+
+      <SettingsModal visible={settingsVisible} onClose={() => setSettingsVisible(false)} />
     </SafeAreaView>
   );
 }
@@ -419,6 +429,9 @@ const styles = StyleSheet.create({
   greeting: { fontSize: 14, color: 'rgba(255,255,255,0.8)' },
   appName: { fontSize: 26, fontWeight: '800', color: '#FFF', marginTop: 2 },
   subtitle: { fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 4 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  settingsBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+  settingsIcon: { fontSize: 22 },
   logoBox: { width: 56, height: 56, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
   logoIcon: { fontSize: 30 },
   chipsRow: { paddingHorizontal: 20 },

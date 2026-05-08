@@ -9,6 +9,7 @@ import { Text } from 'react-native';
 import { AppProvider } from './src/context/AppContext';
 import { LicenseProvider } from './src/context/LicenseContext';
 import { LicenseGate } from './src/screens/LicenseGate';
+import { I18nProvider, useTranslation } from './src/i18n';
 import { COLORS } from './src/components';
 
 import HomeScreen from './src/screens/HomeScreen';
@@ -30,6 +31,7 @@ const TAB_ICONS = {
 };
 
 function TabNavigator() {
+  const { t } = useTranslation();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -54,17 +56,14 @@ function TabNavigator() {
           shadowOpacity: 0.06,
           shadowRadius: 6,
         },
-        tabBarLabelStyle: {
-          fontSize: 10,
-          fontWeight: '600',
-        },
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
       })}
     >
-      <Tab.Screen name="Home"        component={HomeScreen}        options={{ tabBarLabel: 'Overview' }} />
-      <Tab.Screen name="Ingredients" component={IngredientsScreen} options={{ tabBarLabel: 'Ingredients' }} />
-      <Tab.Screen name="Staff"       component={StaffScreen}       options={{ tabBarLabel: 'Staff' }} />
-      <Tab.Screen name="Overhead"    component={OverheadScreen}    options={{ tabBarLabel: 'Overhead' }} />
-      <Tab.Screen name="Dishes"      component={DishesScreen}      options={{ tabBarLabel: 'Dishes' }} />
+      <Tab.Screen name="Home"        component={HomeScreen}        options={{ tabBarLabel: t('tabs.overview') }} />
+      <Tab.Screen name="Ingredients" component={IngredientsScreen} options={{ tabBarLabel: t('tabs.ingredients') }} />
+      <Tab.Screen name="Staff"       component={StaffScreen}       options={{ tabBarLabel: t('tabs.staff') }} />
+      <Tab.Screen name="Overhead"    component={OverheadScreen}    options={{ tabBarLabel: t('tabs.overhead') }} />
+      <Tab.Screen name="Dishes"      component={DishesScreen}      options={{ tabBarLabel: t('tabs.dishes') }} />
     </Tab.Navigator>
   );
 }
@@ -91,6 +90,7 @@ function RootNavigator() {
 export default function App() {
   return (
     <SafeAreaProvider>
+      <I18nProvider>
       <LicenseProvider>
         <LicenseGate>
           <AppProvider>
@@ -101,6 +101,7 @@ export default function App() {
           </AppProvider>
         </LicenseGate>
       </LicenseProvider>
+      </I18nProvider>
     </SafeAreaProvider>
   );
 }

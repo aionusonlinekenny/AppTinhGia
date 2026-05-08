@@ -9,7 +9,8 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useApp, generateId, formatCurrency } from '../context/AppContext';
+import { useApp, generateId } from '../context/AppContext';
+import { useI18n } from '../i18n';
 import {
   COLORS,
   Header,
@@ -39,6 +40,8 @@ function getTypeInfo(key) {
 export default function OverheadScreen() {
   const { state, dispatch } = useApp();
   const { overheadCosts, settings } = state;
+  const { t, formatCurrency } = useI18n();
+  const getTypeLabel = (key) => t('overhead.' + key);
   const [modalVisible, setModalVisible] = useState(false);
   const [settingsModalVisible, setSettingsModalVisible] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -107,13 +110,13 @@ export default function OverheadScreen() {
     setModalVisible(false);
   }
 
-  function handleDelete(cost) {
-    Alert.alert('Delete Cost', `Delete "${cost.name}"?`, [
-      { text: 'Cancel', style: 'cancel' },
+  function handleDelete(item) {
+    Alert.alert(t('overhead.deleteTitle'), t('overhead.deleteMsg', { costName: item.name }), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('common.delete'),
         style: 'destructive',
-        onPress: () => dispatch({ type: 'DELETE_OVERHEAD', payload: cost.id }),
+        onPress: () => dispatch({ type: 'DELETE_OVERHEAD', payload: item.id }),
       },
     ]);
   }
@@ -132,20 +135,20 @@ export default function OverheadScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <Header
-        title="Overhead Costs"
-        subtitle="Electricity, water, gas, rent and other fixed monthly costs"
+        title={t('overhead.title')}
+        subtitle={t('overhead.subtitle')}
       />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Summary */}
         <Card style={styles.summaryCard}>
           <View style={styles.summaryRow}>
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>Total / month</Text>
+              <Text style={styles.summaryLabel}>{t('overhead.totalPerMonth')}</Text>
               <Text style={styles.summaryValue}>{formatCurrency(totalMonthlyOverhead)}</Text>
             </View>
             <View style={styles.summaryDivider} />
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>Cost / dish</Text>
+              <Text style={styles.summaryLabel}>{t('overhead.costPerDish')}</Text>
               <Text style={[styles.summaryValue, { color: COLORS.accent }]}>
                 {formatCurrency(overheadPerDish)}
               </Text>
@@ -154,10 +157,10 @@ export default function OverheadScreen() {
           <Divider />
           <View style={styles.settingsInfo}>
             <Text style={styles.settingsText}>
-              📅 {settings.workingDaysPerMonth} days/mo · 🍽️ {settings.totalDishesPerDay} dishes/day
+              {t('overhead.allocInfo', { workingDays: settings.workingDaysPerMonth, totalDishes: settings.totalDishesPerDay })}
             </Text>
             <TouchableOpacity onPress={() => setSettingsModalVisible(true)}>
-              <Text style={styles.settingsEditBtn}>Edit</Text>
+              <Text style={styles.settingsEditBtn}>{t('home.editBtn')}</Text>
             </TouchableOpacity>
           </View>
         </Card>
@@ -174,7 +177,7 @@ export default function OverheadScreen() {
                 style={[styles.typeCard, { backgroundColor: type.color, borderColor: type.border }]}
               >
                 <Text style={styles.typeIcon}>{type.icon}</Text>
-                <Text style={styles.typeLabel}>{type.label}</Text>
+                <Text style={styles.typeLabel}>{getTypeLabel(type.key)}</Text>
                 <Text style={[styles.typeAmount, { color: type.border }]}>
                   {formatCurrency(total)}
                 </Text>
@@ -184,13 +187,13 @@ export default function OverheadScreen() {
         </View>
 
         <SectionTitle
-          text="Cost Items"
-          action="+ Add"
+          text={t('overhead.costItems')}
+          action={t('overhead.addBtn')}
           onAction={openAdd}
         />
 
         {overheadCosts.length === 0 ? (
-          <EmptyState icon="💡" message="No costs yet. Add electricity, water, rent, etc." />
+          <EmptyState icon="💡" message={t('overhead.noItems')} />
         ) : (
           Object.entries(grouped).map(([typeKey, items]) => {
             const typeInfo = getTypeInfo(typeKey);
@@ -198,7 +201,7 @@ export default function OverheadScreen() {
               <Card key={typeKey} style={[styles.groupCard, { borderTopColor: typeInfo.border }]}>
                 <View style={styles.groupHeader}>
                   <Text style={styles.groupIcon}>{typeInfo.icon}</Text>
-                  <Text style={styles.groupLabel}>{typeInfo.label}</Text>
+                  <Text style={styles.groupLabel}>{getTypeLabel(typeInfo.key)}</Text>
                   <Text style={[styles.groupTotal, { color: typeInfo.border }]}>
                     {formatCurrency(items.reduce((s, i) => s + i.monthlyCost, 0))}
                   </Text>
@@ -208,7 +211,7 @@ export default function OverheadScreen() {
                   <View key={cost.id} style={styles.costRow}>
                     <View style={styles.costInfo}>
                       <Text style={styles.costName}>{cost.name}</Text>
-                      <Text style={styles.costAmount}>{formatCurrency(cost.monthlyCost)} / mo</Text>
+                      <Text style={styles.costAmount}>{formatCurrency(cost.monthlyCost)} {t('overhead.amountUnit')}</Text>
                     </View>
                     <View style={styles.costActions}>
                       <TouchableOpacity onPress={() => openEdit(cost)} style={styles.iconBtn}>
@@ -232,16 +235,16 @@ export default function OverheadScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
             <Text style={styles.modalTitle}>
-              {editing ? 'Update Cost' : 'Add Cost'}
+              {editing ? t('overhead.updateTitle') : t('overhead.addTitle')}
             </Text>
 
-            <Text style={styles.pickLabel}>Cost Type</Text>
+            <Text style={styles.pickLabel}>{t('overhead.costType')}</Text>
             <TouchableOpacity
               style={styles.pickBtn}
               onPress={() => setShowTypePicker(!showTypePicker)}
             >
               <Text style={styles.pickValue}>
-                {getTypeInfo(form.type).icon} {getTypeInfo(form.type).label}
+                {getTypeInfo(form.type).icon} {getTypeLabel(getTypeInfo(form.type).key)}
               </Text>
               <Text style={styles.pickArrow}>▼</Text>
             </TouchableOpacity>
@@ -257,7 +260,7 @@ export default function OverheadScreen() {
                     }}
                   >
                     <Text style={[styles.pickerItemText, form.type === t.key && styles.pickerItemTextActive]}>
-                      {t.icon} {t.label}
+                      {t.icon} {getTypeLabel(t.key)}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -265,31 +268,31 @@ export default function OverheadScreen() {
             )}
 
             <Input
-              label="Cost Name"
+              label={t('overhead.costName')}
               value={form.name}
               onChangeText={v => setForm(f => ({ ...f, name: v }))}
-              placeholder="e.g. Monthly Electric Bill..."
+              placeholder={t('overhead.namePlaceholder')}
               error={errors.name}
             />
             <Input
-              label="Amount / month"
+              label={t('overhead.amount')}
               value={form.monthlyCost}
               onChangeText={v => setForm(f => ({ ...f, monthlyCost: v }))}
-              placeholder="e.g. 800"
+              placeholder={t('overhead.amountPlaceholder')}
               keyboardType="numeric"
-              right="$/mo"
+              right={t('overhead.amountUnit')}
               error={errors.monthlyCost}
             />
 
             <View style={styles.modalActions}>
               <Button
-                label="Cancel"
+                label={t('common.cancel')}
                 variant="outline"
                 onPress={() => setModalVisible(false)}
                 style={{ flex: 1, marginRight: 8 }}
               />
               <Button
-                label={editing ? 'Update' : 'Add'}
+                label={editing ? t('common.update') : t('common.add')}
                 onPress={handleSave}
                 style={{ flex: 1 }}
               />
@@ -302,29 +305,29 @@ export default function OverheadScreen() {
       <Modal visible={settingsModalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
-            <Text style={styles.modalTitle}>Cost Allocation Settings</Text>
+            <Text style={styles.modalTitle}>{t('overhead.settingsTitle')}</Text>
             <Text style={styles.settingsHint}>
-              Used to calculate overhead cost allocated per dish
+              {t('overhead.settingsNote')}
             </Text>
             <Input
-              label="Working Days / Month"
+              label={t('overhead.workingDays')}
               value={settingsForm.workingDaysPerMonth}
               onChangeText={v => setSettingsForm(f => ({ ...f, workingDaysPerMonth: v }))}
-              placeholder="26"
+              placeholder={t('overhead.workingDaysDefault')}
               keyboardType="numeric"
-              right="days"
+              right={t('overhead.daysUnit')}
             />
             <Input
-              label="Total Dishes Sold / Day"
+              label={t('overhead.dishesPerDay')}
               value={settingsForm.totalDishesPerDay}
               onChangeText={v => setSettingsForm(f => ({ ...f, totalDishesPerDay: v }))}
-              placeholder="100"
+              placeholder={t('overhead.dishesDefault')}
               keyboardType="numeric"
-              right="dishes"
+              right={t('overhead.dishesUnit')}
             />
             {settingsForm.workingDaysPerMonth && settingsForm.totalDishesPerDay && (
               <View style={styles.calcPreview}>
-                <Text style={styles.calcLabel}>Overhead cost per dish:</Text>
+                <Text style={styles.calcLabel}>{t('overhead.overheadPerDish')}</Text>
                 <Text style={styles.calcValue}>
                   {formatCurrency(
                     totalMonthlyOverhead /
@@ -336,12 +339,12 @@ export default function OverheadScreen() {
             )}
             <View style={styles.modalActions}>
               <Button
-                label="Cancel"
+                label={t('common.cancel')}
                 variant="outline"
                 onPress={() => setSettingsModalVisible(false)}
                 style={{ flex: 1, marginRight: 8 }}
               />
-              <Button label="Save" onPress={saveSettings} style={{ flex: 1 }} />
+              <Button label={t('common.save')} onPress={saveSettings} style={{ flex: 1 }} />
             </View>
           </View>
         </View>

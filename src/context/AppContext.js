@@ -243,34 +243,70 @@ export function calcSalesBreakdown(grossSales, taxRate = 8) {
   return { netSales: net, taxCollected: grossSales - net };
 }
 
-// ── Ingredient pricing helpers ───────────────────────────────────
-// Unit used when adding this ingredient to a dish (oz for weight, piece for count)
+// Unit used when adding this ingredient to a dish
+// Supports both imperial (lb/oz) and metric (kg/gram/lạng) units
 export function getIngredientDishUnit(ing) {
   if (!ing) return 'oz';
   const unit = (ing.unit || '').toLowerCase();
+  // Metric weight
+  if (unit === 'kg' || unit === 'gram' || unit === 'lạng') return 'gram';
+  // Metric liquid
+  if (unit === 'lít' || unit === 'ml') return 'ml';
+  // Imperial weight
+  if (unit === 'lb' || unit === 'oz') return 'oz';
+  // Imperial box/bag/pack
   if (unit === 'box' || unit === 'bag' || unit === 'pack') {
     const sub = (ing.subUnit || 'lb').toLowerCase();
     if (sub === 'piece' || sub === 'each') return 'piece';
+    if (sub === 'gram' || sub === 'kg')   return 'gram';
     return 'oz';
   }
-  if (unit === 'lb' || unit === 'oz') return 'oz';
+  // VND container units (hộp/túi/gói)
+  if (unit === 'hộp' || unit === 'túi' || unit === 'gói') {
+    const sub = (ing.subUnit || 'gram').toLowerCase();
+    if (sub === 'gram' || sub === 'kg')  return 'gram';
+    if (sub === 'ml'   || sub === 'lít') return 'ml';
+    return 'cái';
+  }
   return unit;
 }
 
-// Effective price per dish unit ($/oz or $/piece)
+// Effective price per dish unit ($/oz, $/gram, $/piece, etc.)
 export function getIngredientPricePerDishUnit(ing) {
   if (!ing) return 0;
   const price = ing.pricePerUnit || 0;
-  const unit = (ing.unit || '').toLowerCase();
-  if (unit === 'lb') return price / 16;
-  if (unit === 'oz') return price;
+  const unit  = (ing.unit || '').toLowerCase();
+  // Imperial
+  if (unit === 'lb')  return price / 16;
+  if (unit === 'oz')  return price;
+  // Metric weight
+  if (unit === 'kg')    return price / 1000;
+  if (unit === 'gram')  return price;
+  if (unit === 'lạng')  return price / 100; // 1 lạng = 100g
+  // Metric liquid
+  if (unit === 'lít') return price / 1000;
+  if (unit === 'ml')  return price;
+  // Imperial box/bag/pack
   if (unit === 'box' || unit === 'bag' || unit === 'pack') {
-    const perBox = ing.unitsPerBox || 1;
-    const sub = (ing.subUnit || 'lb').toLowerCase();
+    const perBox     = ing.unitsPerBox || 1;
+    const sub        = (ing.subUnit || 'lb').toLowerCase();
     const pricePerSub = price / perBox;
-    if (sub === 'lb') return pricePerSub / 16;
-    if (sub === 'oz') return pricePerSub;
+    if (sub === 'lb')   return pricePerSub / 16;
+    if (sub === 'oz')   return pricePerSub;
+    if (sub === 'kg')   return pricePerSub / 1000;
+    if (sub === 'gram') return pricePerSub;
     return pricePerSub; // piece / each
+  }
+  // VND containers
+  if (unit === 'hộp' || unit === 'túi' || unit === 'gói') {
+    const perBox      = ing.unitsPerBox || 1;
+    const sub         = (ing.subUnit || 'gram').toLowerCase();
+    const pricePerSub = price / perBox;
+    if (sub === 'kg')   return pricePerSub / 1000;
+    if (sub === 'gram') return pricePerSub;
+    if (sub === 'lít')  return pricePerSub / 1000;
+    if (sub === 'ml')   return pricePerSub;
+    return pricePerSub; // cái
   }
   return price;
 }
