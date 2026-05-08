@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Menu Cost Pro — Get Your License</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+         background: #F5F5F5; color: #212121; }
+
+  /* Hero */
+  .hero { background: linear-gradient(135deg, #E65100 0%, #FF8F00 100%);
+          color: #fff; padding: 60px 20px; text-align: center; }
+  .hero h1 { font-size: 32px; font-weight: 900; margin-bottom: 8px; }
+  .hero p  { font-size: 16px; opacity: .85; max-width: 500px; margin: 0 auto 32px; }
+
+  .price-badge { display: inline-flex; align-items: flex-end; gap: 4px;
+                 background: rgba(255,255,255,.15); border-radius: 20px;
+                 padding: 16px 32px; margin-bottom: 12px; }
+  .price-num  { font-size: 64px; font-weight: 900; line-height: 1; }
+  .price-unit { font-size: 20px; opacity: .85; padding-bottom: 10px; }
+  .price-note { font-size: 14px; opacity: .75; }
+
+  /* Container */
+  .wrap { max-width: 700px; margin: 0 auto; padding: 40px 20px; }
+
+  /* Features */
+  .features { background: #fff; border-radius: 16px; padding: 28px;
+              box-shadow: 0 2px 12px rgba(0,0,0,.07); margin-bottom: 28px; }
+  .features h2 { font-size: 18px; font-weight: 700; color: #E65100; margin-bottom: 16px; }
+  .feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .feature-item { display: flex; align-items: flex-start; gap: 8px;
+                  font-size: 14px; line-height: 1.5; }
+  .feature-item .icon { font-size: 16px; flex-shrink: 0; }
+
+  /* Order form */
+  .orderCard { background: #fff; border-radius: 16px; padding: 28px;
+               box-shadow: 0 2px 12px rgba(0,0,0,.07); }
+  .orderCard h2 { font-size: 18px; font-weight: 700; color: #E65100; margin-bottom: 6px; }
+  .orderCard p  { font-size: 13px; color: #888; margin-bottom: 24px; }
+
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 6px; }
+  .field input, .field textarea, .field select {
+    width: 100%; padding: 12px 14px; border: 1.5px solid #DDD;
+    border-radius: 10px; font-size: 14px; font-family: inherit; }
+  .field input:focus, .field textarea:focus, .field select:focus {
+    outline: none; border-color: #E65100; }
+  .field textarea { resize: vertical; min-height: 80px; }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .submitBtn {
+    width: 100%; padding: 16px; border: none; border-radius: 12px;
+    background: #E65100; color: #fff; font-size: 16px; font-weight: 700;
+    cursor: pointer; transition: opacity .15s; }
+  .submitBtn:hover   { opacity: .88; }
+  .submitBtn:disabled { opacity: .45; cursor: default; }
+
+  /* Success / error */
+  #successMsg { display: none; background: #E8F5E9; border: 1px solid #A5D6A7;
+               border-radius: 12px; padding: 20px; text-align: center; color: #2E7D32; }
+  #successMsg h3 { font-size: 18px; margin-bottom: 8px; }
+  #successMsg p  { font-size: 14px; }
+  #errMsg { display: none; color: #E53935; font-size: 13px; text-align: center; margin-top: 12px; }
+
+  /* FAQ */
+  .faq { margin-top: 32px; }
+  .faq h2 { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: #555; }
+  .faq-item { background: #fff; border-radius: 10px; padding: 16px 20px;
+              margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+  .faq-item strong { font-size: 14px; display: block; margin-bottom: 4px; }
+  .faq-item p { font-size: 13px; color: #666; line-height: 1.5; }
+
+  footer { text-align: center; padding: 32px 20px; font-size: 12px; color: #aaa; }
+
+  @media (max-width: 520px) {
+    .feature-grid { grid-template-columns: 1fr; }
+    .row2 { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 24px; }
+    .price-num { font-size: 48px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Hero -->
+<div class="hero">
+  <h1>Menu Cost Pro</h1>
+  <p>The smarter way for restaurants to track ingredient costs, staff payroll, and dish profitability.</p>
+  <div class="price-badge">
+    <span class="price-num">$5</span>
+    <span class="price-unit">/month</span>
+  </div>
+  <div class="price-note">per restaurant · cancel anytime</div>
+</div>
+
+<div class="wrap">
+
+  <!-- Features -->
+  <div class="features">
+    <h2>Everything you need to run a profitable kitchen</h2>
+    <div class="feature-grid">
+      <div class="feature-item"><span class="icon">🧮</span><span>Ingredient & supply cost tracking with box/bag pricing</span></div>
+      <div class="feature-item"><span class="icon">🍜</span><span>Broth & stock batch recipe costing</span></div>
+      <div class="feature-item"><span class="icon">🍽️</span><span>Dish profitability calculator</span></div>
+      <div class="feature-item"><span class="icon">👥</span><span>Staff scheduling & payroll cost</span></div>
+      <div class="feature-item"><span class="icon">📱</span><span>Runs on your phone — no computer needed</span></div>
+      <div class="feature-item"><span class="icon">📶</span><span>Works fully offline</span></div>
+      <div class="feature-item"><span class="icon">🔒</span><span>Staff tab password protection</span></div>
+      <div class="feature-item"><span class="icon">♾️</span><span>Unlimited menu items & recipes</span></div>
+    </div>
+  </div>
+
+  <!-- Order form -->
+  <div class="orderCard">
+    <h2>🛒 Get Your License Key</h2>
+    <p>Fill out the form below. You'll receive your license key by email within 24 hours after payment confirmation.</p>
+
+    <form id="orderForm">
+      <div class="row2">
+        <div class="field">
+          <label>Your Name *</label>
+          <input type="text" id="name" placeholder="Kenny Nguyen" required />
+        </div>
+        <div class="field">
+          <label>Email Address *</label>
+          <input type="email" id="email" placeholder="kenny@restaurant.com" required />
+        </div>
+      </div>
+      <div class="field">
+        <label>Restaurant Name *</label>
+        <input type="text" id="restaurant" placeholder="Pho Hung Restaurant" required />
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Phone / WhatsApp</label>
+          <input type="tel" id="phone" placeholder="+1 (555) 000-0000" />
+        </div>
+        <div class="field">
+          <label>Number of Devices</label>
+          <select id="devices">
+            <option value="1">1 device — $5/mo</option>
+            <option value="2">2 devices — $8/mo</option>
+            <option value="3">3 devices — $10/mo</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Device ID (from the app) <span style="font-weight:400;color:#aaa">— optional but speeds things up</span></label>
+        <input type="text" id="deviceId" placeholder="xxxxxxxx-xxxx-4xxx-xxxx-xxxxxxxxxxxx" style="font-family:monospace" />
+      </div>
+      <div class="field">
+        <label>Notes</label>
+        <textarea id="notes" placeholder="Any questions or special requests..."></textarea>
+      </div>
+
+      <button type="submit" class="submitBtn" id="submitBtn">Submit Order →</button>
+      <p id="errMsg"></p>
+    </form>
+
+    <div id="successMsg">
+      <h3>✅ Order received!</h3>
+      <p>Thank you! We'll send your license key to your email within 24 hours.<br>
+         If you don't hear back, check your spam folder or contact us directly.</p>
+    </div>
+  </div>
+
+  <!-- FAQ -->
+  <div class="faq">
+    <h2>Frequently asked questions</h2>
+    <div class="faq-item">
+      <strong>How do I get my key?</strong>
+      <p>After submitting the form and completing payment, your license key will be emailed to you within 24 hours.</p>
+    </div>
+    <div class="faq-item">
+      <strong>How do I enter the key in the app?</strong>
+      <p>Open Menu Cost Pro → tap the orange trial banner at the top → tap "Enter Key" → type your XXXX-XXXX-XXXX-XXXX key → tap Activate.</p>
+    </div>
+    <div class="faq-item">
+      <strong>Can I use the key on multiple phones?</strong>
+      <p>Yes. Choose the appropriate device count when ordering. Each device must activate with the same key.</p>
+    </div>
+    <div class="faq-item">
+      <strong>What happens after the trial expires?</strong>
+      <p>The app locks and shows the activation screen. Your data is kept safe — entering a valid key unlocks everything instantly.</p>
+    </div>
+    <div class="faq-item">
+      <strong>Can I cancel?</strong>
+      <p>Yes, cancel any time by emailing us. No long-term commitment required.</p>
+    </div>
+  </div>
+
+</div>
+
+<footer>Menu Cost Pro &copy; 2025 · <a href="mailto:support@stonephovaldosta.com">support@stonephovaldosta.com</a></footer>
+
+<script>
+document.getElementById('orderForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+  document.getElementById('errMsg').style.display = 'none';
+
+  const payload = {
+    name:       document.getElementById('name').value.trim(),
+    email:      document.getElementById('email').value.trim(),
+    restaurant: document.getElementById('restaurant').value.trim(),
+    phone:      document.getElementById('phone').value.trim(),
+    devices:    document.getElementById('devices').value,
+    deviceId:   document.getElementById('deviceId').value.trim(),
+    notes:      document.getElementById('notes').value.trim(),
+  };
+
+  try {
+    const res  = await fetch('order.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('orderForm').style.display = 'none';
+      document.getElementById('successMsg').style.display = 'block';
+    } else {
+      throw new Error(data.error || 'Server error');
+    }
+  } catch(err) {
+    document.getElementById('errMsg').textContent = '❌ ' + err.message + '. Please email us directly.';
+    document.getElementById('errMsg').style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Submit Order →';
+  }
+});
+</script>
+</body>
+</html>
