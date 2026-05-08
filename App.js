@@ -7,6 +7,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Text } from 'react-native';
 
 import { AppProvider } from './src/context/AppContext';
+import { LicenseProvider } from './src/context/LicenseContext';
+import { LicenseGate } from './src/screens/LicenseGate';
 import { COLORS } from './src/components';
 
 import HomeScreen from './src/screens/HomeScreen';
@@ -58,31 +60,11 @@ function TabNavigator() {
         },
       })}
     >
-      <Tab.Screen
-        name="Home"
-        component={HomeScreen}
-        options={{ tabBarLabel: 'Overview' }}
-      />
-      <Tab.Screen
-        name="Ingredients"
-        component={IngredientsScreen}
-        options={{ tabBarLabel: 'Ingredients' }}
-      />
-      <Tab.Screen
-        name="Staff"
-        component={StaffScreen}
-        options={{ tabBarLabel: 'Staff' }}
-      />
-      <Tab.Screen
-        name="Overhead"
-        component={OverheadScreen}
-        options={{ tabBarLabel: 'Overhead' }}
-      />
-      <Tab.Screen
-        name="Dishes"
-        component={DishesScreen}
-        options={{ tabBarLabel: 'Dishes' }}
-      />
+      <Tab.Screen name="Home"        component={HomeScreen}        options={{ tabBarLabel: 'Overview' }} />
+      <Tab.Screen name="Ingredients" component={IngredientsScreen} options={{ tabBarLabel: 'Ingredients' }} />
+      <Tab.Screen name="Staff"       component={StaffScreen}       options={{ tabBarLabel: 'Staff' }} />
+      <Tab.Screen name="Overhead"    component={OverheadScreen}    options={{ tabBarLabel: 'Overhead' }} />
+      <Tab.Screen name="Dishes"      component={DishesScreen}      options={{ tabBarLabel: 'Dishes' }} />
     </Tab.Navigator>
   );
 }
@@ -109,12 +91,16 @@ function RootNavigator() {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <AppProvider>
-        <NavigationContainer>
-          <StatusBar style="light" backgroundColor={COLORS.primary} />
-          <RootNavigator />
-        </NavigationContainer>
-      </AppProvider>
+      <LicenseProvider>
+        <LicenseGate>
+          <AppProvider>
+            <NavigationContainer>
+              <StatusBar style="light" backgroundColor={COLORS.primary} />
+              <RootNavigator />
+            </NavigationContainer>
+          </AppProvider>
+        </LicenseGate>
+      </LicenseProvider>
     </SafeAreaProvider>
   );
 }

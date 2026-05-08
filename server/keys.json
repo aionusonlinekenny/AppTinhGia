@@ -1,0 +1,14 @@
+{
+  "ABCD-1234-EFGH-5678": {
+    "customer": "Demo Restaurant",
+    "maxDevices": 1,
+    "active": true,
+    "activatedDevices": []
+  },
+  "WXYZ-9999-MNOP-0001": {
+    "customer": "Pho Shop 1",
+    "maxDevices": 1,
+    "active": true,
+    "activatedDevices": []
+  }
+}
