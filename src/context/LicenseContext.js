@@ -5,8 +5,9 @@ const TRIAL_DAYS      = 7;
 const RECHECK_DAYS    = 30;   // re-validate online every 30 days
 const GRACE_DAYS      = 60;   // offline grace period before hard-lock
 
-// ── Replace this with your deployed server URL ───────────────────
-export const API_BASE = 'https://YOUR_SERVER_URL_HERE';
+// ── Your hosting URL — update the domain to match yours ──────────
+// Files should be uploaded to: public_html/license-api/
+export const API_BASE = 'https://stonephovaldosta.com/license-api';
 
 const K = {
   INSTALL:      '@lic_install',
@@ -88,7 +89,7 @@ export function LicenseProvider({ children }) {
 
   async function callValidateAPI(key, did) {
     try {
-      const res = await fetch(`${API_BASE}/api/validate`, {
+      const res = await fetch(`${API_BASE}/validate.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key, deviceId: did }),
