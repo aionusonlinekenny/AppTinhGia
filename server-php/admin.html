@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Menu Cost Pro — License Admin</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+         background: #F5F5F5; color: #212121; }
+
+  /* Login */
+  #loginScreen { display: flex; align-items: center; justify-content: center;
+                 min-height: 100vh; padding: 20px; }
+  .loginCard { background: #fff; border-radius: 16px; padding: 40px;
+               max-width: 380px; width: 100%;
+               box-shadow: 0 4px 24px rgba(0,0,0,.1); text-align: center; }
+  .loginCard h1 { font-size: 22px; margin-bottom: 6px; color: #E65100; }
+  .loginCard p  { font-size: 13px; color: #888; margin-bottom: 24px; }
+  .loginCard input { width: 100%; padding: 12px 16px; border: 1.5px solid #DDD;
+                     border-radius: 10px; font-size: 15px; margin-bottom: 12px;
+                     letter-spacing: 1px; }
+  .loginCard input:focus { outline: none; border-color: #E65100; }
+
+  /* Main */
+  #mainScreen { display: none; }
+  .topbar { background: #E65100; color: #fff; padding: 16px 24px;
+            display: flex; align-items: center; justify-content: space-between; }
+  .topbar h1 { font-size: 18px; }
+  .topbar span { font-size: 12px; opacity: .7; }
+
+  .container { max-width: 900px; margin: 0 auto; padding: 24px 16px; }
+
+  /* Add key form */
+  .addCard { background: #fff; border-radius: 12px; padding: 20px;
+             margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  .addCard h2 { font-size: 15px; font-weight: 700; margin-bottom: 14px; color: #E65100; }
+  .formRow { display: flex; gap: 10px; flex-wrap: wrap; }
+  .formRow input, .formRow select { flex: 1; min-width: 140px; padding: 10px 12px;
+    border: 1.5px solid #DDD; border-radius: 8px; font-size: 14px; }
+  .formRow input:focus, .formRow select:focus { outline: none; border-color: #E65100; }
+
+  /* Buttons */
+  .btn { padding: 10px 18px; border: none; border-radius: 8px; font-size: 13px;
+         font-weight: 600; cursor: pointer; transition: opacity .15s; }
+  .btn:hover { opacity: .85; }
+  .btn:disabled { opacity: .4; cursor: default; }
+  .btn-primary  { background: #E65100; color: #fff; }
+  .btn-success  { background: #388E3C; color: #fff; }
+  .btn-danger   { background: #E53935; color: #fff; }
+  .btn-warning  { background: #F57C00; color: #fff; }
+  .btn-outline  { background: transparent; border: 1.5px solid #DDD; color: #555; }
+  .btn-sm       { padding: 6px 12px; font-size: 12px; }
+
+  /* Stats */
+  .statsRow { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+  .statCard { flex: 1; min-width: 120px; background: #fff; border-radius: 10px;
+              padding: 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  .statVal  { font-size: 28px; font-weight: 800; color: #E65100; }
+  .statLbl  { font-size: 11px; color: #888; margin-top: 4px; }
+
+  /* Key list */
+  .keyCard { background: #fff; border-radius: 12px; padding: 16px;
+             margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  .keyTop  { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .keyCode { font-size: 17px; font-weight: 800; font-family: monospace;
+             color: #212121; letter-spacing: 1px; cursor: pointer; }
+  .keyCode:hover { color: #E65100; }
+  .badge   { display: inline-block; padding: 3px 10px; border-radius: 20px;
+             font-size: 11px; font-weight: 700; }
+  .badge-active   { background: #E8F5E9; color: #388E3C; }
+  .badge-inactive { background: #FFEBEE; color: #E53935; }
+  .keyMeta { font-size: 12px; color: #888; margin-top: 6px; }
+  .keyMeta span { margin-right: 16px; }
+  .keyActions { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .copied { color: #388E3C; font-size: 12px; font-weight: 600; }
+
+  /* Search */
+  .searchRow { display: flex; gap: 10px; margin-bottom: 16px; }
+  .searchRow input { flex: 1; padding: 10px 14px; border: 1.5px solid #DDD;
+                     border-radius: 8px; font-size: 14px; }
+  .searchRow input:focus { outline: none; border-color: #E65100; }
+
+  /* Toast */
+  #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+           background: #323232; color: #fff; padding: 12px 24px; border-radius: 8px;
+           font-size: 14px; display: none; z-index: 999; }
+
+  .empty { text-align: center; padding: 40px; color: #aaa; font-size: 14px; }
+  .genBtn { margin-left: 8px; font-size: 11px; }
+
+  @media (max-width: 600px) {
+    .formRow { flex-direction: column; }
+    .keyTop  { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="loginCard">
+    <h1>🔐 License Admin</h1>
+    <p>Menu Cost Pro — Key Manager</p>
+    <input type="password" id="secretInput" placeholder="Enter admin secret" />
+    <button class="btn btn-primary" style="width:100%;padding:13px" onclick="doLogin()">Login</button>
+    <p id="loginErr" style="color:#E53935;font-size:12px;margin-top:10px;display:none">Incorrect secret</p>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="mainScreen">
+  <div class="topbar">
+    <h1>🗝️ License Key Manager</h1>
+    <span id="serverLabel"></span>
+  </div>
+
+  <div class="container">
+
+    <!-- Stats -->
+    <div class="statsRow">
+      <div class="statCard"><div class="statVal" id="statTotal">—</div><div class="statLbl">Total Keys</div></div>
+      <div class="statCard"><div class="statVal" id="statActive">—</div><div class="statLbl">Active</div></div>
+      <div class="statCard"><div class="statVal" id="statActivated">—</div><div class="statLbl">Activated Devices</div></div>
+      <div class="statCard"><div class="statVal" id="statInactive">—</div><div class="statLbl">Deactivated</div></div>
+    </div>
+
+    <!-- Add key -->
+    <div class="addCard">
+      <h2>➕ Create New License Key</h2>
+      <div class="formRow">
+        <input id="newKey" placeholder="Key code (auto-generate or type)" style="font-family:monospace;font-weight:700;letter-spacing:1px" />
+        <button class="btn btn-outline genBtn" onclick="generateKey()">🎲 Generate</button>
+      </div>
+      <div class="formRow" style="margin-top:10px">
+        <input id="newCustomer" placeholder="Customer name (e.g. Pho Hung Restaurant)" />
+        <select id="newMaxDevices">
+          <option value="1">1 device</option>
+          <option value="2">2 devices</option>
+          <option value="3">3 devices</option>
+          <option value="5">5 devices</option>
+        </select>
+        <input id="newNotes" placeholder="Notes (optional)" />
+        <button class="btn btn-primary" onclick="addKey()">Add Key</button>
+      </div>
+    </div>
+
+    <!-- Key list -->
+    <div class="searchRow">
+      <input id="searchInput" placeholder="🔍 Search by key or customer..." oninput="renderKeys()" />
+      <button class="btn btn-outline" onclick="loadKeys()">↻ Refresh</button>
+    </div>
+
+    <div id="keyList"><div class="empty">Loading...</div></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── Config ───────────────────────────────────────────────────────
+// Change this to your actual hosting URL
+const API_BASE = 'https://stonephovaldosta.com/license-api';
+
+let ADMIN_SECRET = '';
+let allKeys = [];
+
+// ── Login ────────────────────────────────────────────────────────
+document.getElementById('secretInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+async function doLogin() {
+  const secret = document.getElementById('secretInput').value.trim();
+  if (!secret) return;
+  // Test with a real API call
+  try {
+    const res = await fetch(`${API_BASE}/admin-keys.php`, {
+      headers: { 'X-Admin-Secret': secret }
+    });
+    if (res.status === 403) {
+      document.getElementById('loginErr').style.display = 'block';
+      return;
+    }
+    ADMIN_SECRET = secret;
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainScreen').style.display = 'block';
+    document.getElementById('serverLabel').textContent = API_BASE;
+    const data = await res.json();
+    allKeys = data;
+    renderKeys();
+    updateStats();
+  } catch(e) {
+    document.getElementById('loginErr').textContent = 'Cannot connect to server';
+    document.getElementById('loginErr').style.display = 'block';
+  }
+}
+
+// ── Load keys ────────────────────────────────────────────────────
+async function loadKeys() {
+  const res = await fetch(`${API_BASE}/admin-keys.php`, {
+    headers: { 'X-Admin-Secret': ADMIN_SECRET }
+  });
+  allKeys = await res.json();
+  renderKeys();
+  updateStats();
+}
+
+function updateStats() {
+  const active   = allKeys.filter(k => k.active == 1);
+  const inactive = allKeys.filter(k => k.active == 0);
+  const devices  = allKeys.reduce((s,k) => s + parseInt(k.activated_count||0), 0);
+  document.getElementById('statTotal').textContent     = allKeys.length;
+  document.getElementById('statActive').textContent    = active.length;
+  document.getElementById('statInactive').textContent  = inactive.length;
+  document.getElementById('statActivated').textContent = devices;
+}
+
+// ── Render ───────────────────────────────────────────────────────
+function renderKeys() {
+  const q   = document.getElementById('searchInput').value.toLowerCase();
+  const filtered = allKeys.filter(k =>
+    k.key_code.toLowerCase().includes(q) ||
+    k.customer.toLowerCase().includes(q)
+  );
+
+  const el = document.getElementById('keyList');
+  if (filtered.length === 0) {
+    el.innerHTML = '<div class="empty">No keys found</div>'; return;
+  }
+
+  el.innerHTML = filtered.map(k => `
+    <div class="keyCard" id="card-${k.key_code}">
+      <div class="keyTop">
+        <span class="keyCode" title="Click to copy" onclick="copyKey('${k.key_code}')">${k.key_code}</span>
+        <span class="badge ${k.active==1 ? 'badge-active' : 'badge-inactive'}">
+          ${k.active==1 ? '✓ Active' : '✗ Inactive'}
+        </span>
+        <span id="copied-${k.key_code}" class="copied" style="display:none">✓ Copied!</span>
+      </div>
+      <div class="keyMeta">
+        <span>👤 ${k.customer}</span>
+        <span>📱 ${k.activated_count||0} / ${k.max_devices} device(s)</span>
+        <span>📅 ${k.created_at ? k.created_at.split(' ')[0] : '—'}</span>
+        ${k.notes ? `<span>📝 ${k.notes}</span>` : ''}
+      </div>
+      <div class="keyActions">
+        ${k.active==1
+          ? `<button class="btn btn-danger btn-sm" onclick="manageKey('${k.key_code}','deactivate')">🚫 Deactivate</button>`
+          : `<button class="btn btn-success btn-sm" onclick="manageKey('${k.key_code}','activate')">✓ Activate</button>`
+        }
+        <button class="btn btn-warning btn-sm" onclick="manageKey('${k.key_code}','reset-devices')">🔄 Reset Devices</button>
+        <button class="btn btn-outline btn-sm" onclick="copyKey('${k.key_code}')">📋 Copy Key</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── Add key ──────────────────────────────────────────────────────
+async function addKey() {
+  const key        = document.getElementById('newKey').value.trim().toUpperCase();
+  const customer   = document.getElementById('newCustomer').value.trim();
+  const maxDevices = document.getElementById('newMaxDevices').value;
+  const notes      = document.getElementById('newNotes').value.trim();
+
+  if (!key || !customer) { toast('⚠️ Key and customer name are required'); return; }
+  if (!/^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(key)) {
+    toast('⚠️ Key format must be XXXX-XXXX-XXXX-XXXX'); return;
+  }
+
+  const res = await fetch(`${API_BASE}/admin-keys.php`, {
+    method: 'POST',
+    headers: { 'X-Admin-Secret': ADMIN_SECRET, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ key, customer, maxDevices: parseInt(maxDevices), notes }),
+  });
+  const data = await res.json();
+  if (data.success) {
+    toast(`✅ Key ${key} added for ${customer}`);
+    document.getElementById('newKey').value = '';
+    document.getElementById('newCustomer').value = '';
+    document.getElementById('newNotes').value = '';
+    loadKeys();
+  } else {
+    toast('❌ ' + (data.error || 'Failed to add key'));
+  }
+}
+
+// ── Manage key ───────────────────────────────────────────────────
+async function manageKey(key, action) {
+  const labels = { deactivate:'Deactivate', activate:'Activate', 'reset-devices':'Reset devices for' };
+  if (!confirm(`${labels[action]} key ${key}?`)) return;
+
+  const res = await fetch(`${API_BASE}/admin-manage.php`, {
+    method: 'POST',
+    headers: { 'X-Admin-Secret': ADMIN_SECRET, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ key, action }),
+  });
+  const data = await res.json();
+  if (data.success) {
+    toast(`✅ ${data.message}`);
+    loadKeys();
+  } else {
+    toast('❌ ' + (data.error || 'Failed'));
+  }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────
+function generateKey() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const seg = () => Array.from({length:4}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
+  document.getElementById('newKey').value = `${seg()}-${seg()}-${seg()}-${seg()}`;
+}
+
+function copyKey(key) {
+  navigator.clipboard.writeText(key).then(() => {
+    const el = document.getElementById(`copied-${key}`);
+    el.style.display = 'inline';
+    setTimeout(() => el.style.display = 'none', 2000);
+  });
+}
+
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.display = 'block';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.style.display = 'none', 3000);
+}
+</script>
+</body>
+</html>
