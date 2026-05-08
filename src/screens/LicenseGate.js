@@ -48,7 +48,7 @@ function PurchaseModal({ visible, onClose }) {
 
             {/* Price badge */}
             <View style={pm.priceBadge}>
-              <Text style={pm.priceAmount}>$5</Text>
+              <Text style={pm.priceAmount}>$4.99</Text>
               <Text style={pm.pricePer}>/month</Text>
             </View>
             <Text style={pm.priceNote}>per restaurant · cancel anytime</Text>
@@ -83,7 +83,7 @@ function PurchaseModal({ visible, onClose }) {
                   by email within 24 hours.
                 </Text>
                 <TouchableOpacity style={pm.buyBtn} onPress={handleBuyNow}>
-                  <Text style={pm.buyBtnText}>🛒 Buy Now — $5/month</Text>
+                  <Text style={pm.buyBtnText}>🛒 Buy Now — $4.99/month</Text>
                 </TouchableOpacity>
                 <Text style={pm.deviceIdLabel}>Your Device ID (include in order):</Text>
                 <Text style={pm.deviceIdValue} selectable>{deviceId}</Text>
@@ -133,7 +133,7 @@ export function TrialBanner() {
     <>
       <TouchableOpacity style={styles.banner} onPress={() => setShowPurchase(true)} activeOpacity={0.85}>
         <Text style={styles.bannerText}>
-          ⏳ Trial — {daysLeft} day{daysLeft !== 1 ? 's' : ''} remaining · Tap to upgrade $5/mo
+          ⏳ Trial — {daysLeft} day{daysLeft !== 1 ? 's' : ''} remaining · Tap to upgrade $4.99/mo
         </Text>
         <TouchableOpacity onPress={() => setDismissed(true)} style={styles.bannerClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Text style={styles.bannerCloseText}>✕</Text>
@@ -191,7 +191,7 @@ function ActivationScreen() {
         <TouchableOpacity style={styles.pricingCard} onPress={() => setShowBuy(true)} activeOpacity={0.9}>
           <View style={styles.pricingTop}>
             <View>
-              <Text style={styles.pricingAmount}>$5<Text style={styles.pricingPer}>/mo</Text></Text>
+              <Text style={styles.pricingAmount}>$4.99<Text style={styles.pricingPer}>/mo</Text></Text>
               <Text style={styles.pricingNote}>per restaurant · cancel anytime</Text>
             </View>
             <Text style={styles.pricingArrow}>›</Text>

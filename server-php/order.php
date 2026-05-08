@@ -50,7 +50,7 @@ try {
 
 // ── Email notification to owner ───────────────────────────────────
 $ownerEmail  = 'support@stonephovaldosta.com'; // ← change to your email
-$priceMap    = [1 => '$5/mo', 2 => '$8/mo', 3 => '$10/mo'];
+$priceMap    = [1 => '$4.99/mo', 2 => '$8/mo', 3 => '$10/mo'];
 $priceLabel  = $priceMap[$devices] ?? "$devices devices";
 
 $subject = "New License Order — $restaurant ($priceLabel)";

@@ -416,7 +416,7 @@ function renderOrders() {
 
   if (list.length === 0) { el.innerHTML = '<div class="empty">No orders found</div>'; return; }
 
-  const priceMap = { '1': '$5/mo', '2': '$8/mo', '3': '$10/mo' };
+  const priceMap = { '1': '$4.99/mo', '2': '$8/mo', '3': '$10/mo' };
 
   el.innerHTML = list.map(o => {
     const badgeClass = { pending:'badge-pending', paid:'badge-paid',

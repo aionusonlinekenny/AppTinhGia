@@ -107,7 +107,7 @@
   <h1>Menu Cost Pro</h1>
   <p>The smarter way for restaurants to track ingredient costs, staff payroll, and dish profitability.</p>
   <div class="price-badge">
-    <span class="price-num">$5</span>
+    <span class="price-num">$4.99</span>
     <span class="price-unit">/month</span>
   </div>
   <div class="price-note">per restaurant · cancel anytime</div>
@@ -158,7 +158,7 @@
         <div class="field">
           <label>Number of Devices</label>
           <select id="devices">
-            <option value="1">1 device — $5/mo</option>
+            <option value="1">1 device — $4.99/mo</option>
             <option value="2">2 devices — $8/mo</option>
             <option value="3">3 devices — $10/mo</option>
           </select>
@@ -193,7 +193,7 @@
       <div class="step">
         <div class="step-num">2</div>
         <div class="step-body">
-          <strong>Pay <span id="payAmount">$5.00</span> via PayPal</strong>
+          <strong>Pay <span id="payAmount">$4.99</span> via PayPal</strong>
           <p>Click the button below. In the PayPal note, include your email address.</p>
         </div>
       </div>
@@ -242,7 +242,7 @@
 <footer>Menu Cost Pro &copy; 2025 · <a href="mailto:support@stonephovaldosta.com">support@stonephovaldosta.com</a></footer>
 
 <script>
-const PRICE_MAP = { '1': '$5.00', '2': '$8.00', '3': '$10.00' };
+const PRICE_MAP = { '1': '$4.99', '2': '$8.00', '3': '$10.00' };
 
 document.getElementById('orderForm').addEventListener('submit', async function(e) {
   e.preventDefault();
@@ -271,7 +271,7 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
     const data = await res.json();
     if (data.success) {
       document.getElementById('orderForm').style.display = 'none';
-      document.getElementById('payAmount').textContent = PRICE_MAP[devices] || '$5.00';
+      document.getElementById('payAmount').textContent = PRICE_MAP[devices] || '$4.99';
       document.getElementById('payStep').style.display = 'block';
     } else {
       throw new Error(data.error || 'Server error');
