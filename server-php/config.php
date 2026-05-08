@@ -1,5 +1,5 @@
 <?php
-define('DB_HOST',     'kennylucia51612.domaincommysql.com');
+define('DB_HOST',     'localhost');
 define('DB_PORT',     '3306');
 define('DB_USER',     'appcostcount');
 define('DB_PASS',     'Eban0815@');
