@@ -15,7 +15,6 @@ import { useFocusEffect } from '@react-navigation/native';
 import {
   useApp,
   generateId,
-  formatCurrency,
   getWeekOf,
   offsetWeek,
   formatWeekRange,
@@ -24,12 +23,12 @@ import {
   calcGroupWeightedRate,
 } from '../context/AppContext';
 import { COLORS, Header, Card, Button, Input, SectionTitle, EmptyState, Divider } from '../components';
+import { useI18n } from '../i18n';
 
 const TABS     = ['Payroll', 'Employees'];
 const DAYS     = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const DEF_SCHED = Object.fromEntries(DAYS.map(d => [d, null]));
 
-const GROUP_LABEL = { kitchen: '👨‍🍳 Kitchen', waiter: '🍽️ Waiter' };
 const GROUP_COLOR = { kitchen: '#FF8A65', waiter: '#42A5F5' };
 
 function calcMainPay(hours, rate, cash)    { return (Number(hours)||0) * (Number(rate)||0) + (Number(cash)||0); }
@@ -40,11 +39,17 @@ const TABLE_W = Object.values(COL).reduce((a,b)=>a+b, 0);
 
 // ── Schedule editor (shared by EmployeesTab) ─────────────────────
 function ScheduleEditor({ schedule, onChange }) {
+  const { t } = useI18n();
   const totalHrs  = Object.values(schedule).filter(Boolean).reduce((s,sh)=>s+shiftHours(sh.start,sh.end), 0);
   const workDays  = Object.values(schedule).filter(Boolean).length;
+
+  const DAY_KEY_MAP = {
+    Mon: 'mon', Tue: 'tue', Wed: 'wed', Thu: 'thu', Fri: 'fri', Sat: 'sat', Sun: 'sun',
+  };
+
   return (
     <View style={sStyles.wrap}>
-      <Text style={sStyles.title}>📅 Weekly Schedule</Text>
+      <Text style={sStyles.title}>{t('staff.weeklySchedule')}</Text>
       {DAYS.map(day => {
         const shift = schedule[day];
         const hrs   = shift ? shiftHours(shift.start, shift.end) : 0;
@@ -54,7 +59,7 @@ function ScheduleEditor({ schedule, onChange }) {
               style={[sStyles.dayBtn, shift && sStyles.dayBtnOn]}
               onPress={() => onChange(day, 'toggle')}
             >
-              <Text style={[sStyles.dayText, shift && sStyles.dayTextOn]}>{day}</Text>
+              <Text style={[sStyles.dayText, shift && sStyles.dayTextOn]}>{t('staff.' + DAY_KEY_MAP[day])}</Text>
             </TouchableOpacity>
             {shift ? (
               <>
@@ -78,15 +83,14 @@ function ScheduleEditor({ schedule, onChange }) {
                 <Text style={sStyles.hrsLabel}>{hrs > 0 ? `${hrs.toFixed(1)}h` : '—'}</Text>
               </>
             ) : (
-              <Text style={sStyles.offLabel}>OFF</Text>
+              <Text style={sStyles.offLabel}>{t('common.off')}</Text>
             )}
           </View>
         );
       })}
       <View style={sStyles.totalRow}>
         <Text style={sStyles.totalText}>
-          Total: <Text style={{ fontWeight:'700', color: COLORS.primary }}>{totalHrs.toFixed(1)} hrs</Text>
-          /week · {workDays} days
+          {t('staff.totalHoursWeek', { totalHours: totalHrs.toFixed(1), workDays: String(workDays) })}
         </Text>
       </View>
     </View>
@@ -112,6 +116,7 @@ const sStyles = StyleSheet.create({
 // ── Root ─────────────────────────────────────────────────────────
 export default function StaffScreen() {
   const { state, dispatch } = useApp();
+  const { t, formatCurrency } = useI18n();
   const { employees, payrollEntries, salesRecords, settings } = state;
   const [activeTab, setActiveTab]     = useState('Payroll');
   const [locked, setLocked]           = useState(true);
@@ -138,34 +143,36 @@ export default function StaffScreen() {
       setPinInput('');
       setLockError('');
     } else {
-      setLockError('Incorrect password. Try again.');
+      setLockError(t('staff.wrongPassword'));
       setPinInput('');
     }
   }
 
   function handleChangePassword() {
-    if (cpForm.current !== password) { setCpError('Current password is incorrect.'); return; }
-    if (cpForm.next.length < 4)      { setCpError('New password must be at least 4 characters.'); return; }
-    if (cpForm.next !== cpForm.confirm) { setCpError('New passwords do not match.'); return; }
+    if (cpForm.current !== password) { setCpError(t('staff.errCurrentPw')); return; }
+    if (cpForm.next.length < 4)      { setCpError(t('staff.errNewPwLen')); return; }
+    if (cpForm.next !== cpForm.confirm) { setCpError(t('staff.errPwMatch')); return; }
     dispatch({ type: 'UPDATE_SETTINGS', payload: { staffPassword: cpForm.next } });
     setChangePwVisible(false);
     setCpForm({ current: '', next: '', confirm: '' });
     setCpError('');
-    Alert.alert('Success', 'Password updated.');
+    Alert.alert(t('common.success'), t('staff.pwUpdated'));
   }
+
+  const TABS_LABELS = [t('staff.tabPayroll'), t('staff.tabEmployees')];
 
   if (locked) {
     return (
       <SafeAreaView style={styles.safe} edges={['bottom']}>
         <View style={styles.lockScreen}>
           <Text style={styles.lockIcon}>🔒</Text>
-          <Text style={styles.lockTitle}>Staff & Payroll</Text>
-          <Text style={styles.lockSub}>Enter password to access</Text>
+          <Text style={styles.lockTitle}>{t('staff.lockTitle')}</Text>
+          <Text style={styles.lockSub}>{t('staff.lockSubtitle')}</Text>
           <TextInput
             style={styles.lockInput}
             value={pinInput}
             onChangeText={v => { setPinInput(v); setLockError(''); }}
-            placeholder="Password"
+            placeholder={t('staff.passwordPlaceholder')}
             placeholderTextColor={COLORS.textLight}
             secureTextEntry
             autoFocus
@@ -174,7 +181,7 @@ export default function StaffScreen() {
           />
           {lockError ? <Text style={styles.lockError}>{lockError}</Text> : null}
           <TouchableOpacity style={styles.unlockBtn} onPress={handleUnlock}>
-            <Text style={styles.unlockBtnText}>Unlock</Text>
+            <Text style={styles.unlockBtnText}>{t('staff.unlock')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -183,20 +190,20 @@ export default function StaffScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
-      <Header title="Staff & Payroll" subtitle="Wages, schedules & weekly payroll" />
+      <Header title={t('staff.title')} subtitle={t('staff.subtitle')} />
 
       {/* Change password button */}
       <TouchableOpacity
         style={styles.changePwRow}
         onPress={() => { setCpForm({ current: '', next: '', confirm: '' }); setCpError(''); setChangePwVisible(true); }}
       >
-        <Text style={styles.changePwText}>🔑 Change password</Text>
+        <Text style={styles.changePwText}>{t('staff.changePassword')}</Text>
       </TouchableOpacity>
 
       <View style={styles.tabBar}>
-        {TABS.map(t => (
-          <TouchableOpacity key={t} style={[styles.tabBtn, activeTab===t && styles.tabBtnActive]} onPress={()=>setActiveTab(t)}>
-            <Text style={[styles.tabText, activeTab===t && styles.tabTextActive]}>{t}</Text>
+        {TABS.map((tabKey, idx) => (
+          <TouchableOpacity key={tabKey} style={[styles.tabBtn, activeTab===tabKey && styles.tabBtnActive]} onPress={()=>setActiveTab(tabKey)}>
+            <Text style={[styles.tabText, activeTab===tabKey && styles.tabTextActive]}>{TABS_LABELS[idx]}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -207,12 +214,12 @@ export default function StaffScreen() {
       <Modal visible={changePwVisible} animationType="fade" transparent>
         <View style={styles.cpOverlay}>
           <View style={styles.cpBox}>
-            <Text style={styles.cpTitle}>🔑 Change Password</Text>
+            <Text style={styles.cpTitle}>{t('staff.changePwTitle')}</Text>
             <TextInput
               style={styles.cpInput}
               value={cpForm.current}
               onChangeText={v => { setCpForm(f => ({ ...f, current: v })); setCpError(''); }}
-              placeholder="Current password"
+              placeholder={t('staff.currentPw')}
               placeholderTextColor={COLORS.textLight}
               secureTextEntry
             />
@@ -220,7 +227,7 @@ export default function StaffScreen() {
               style={styles.cpInput}
               value={cpForm.next}
               onChangeText={v => { setCpForm(f => ({ ...f, next: v })); setCpError(''); }}
-              placeholder="New password (min 4 chars)"
+              placeholder={t('staff.newPw')}
               placeholderTextColor={COLORS.textLight}
               secureTextEntry
             />
@@ -228,14 +235,14 @@ export default function StaffScreen() {
               style={styles.cpInput}
               value={cpForm.confirm}
               onChangeText={v => { setCpForm(f => ({ ...f, confirm: v })); setCpError(''); }}
-              placeholder="Confirm new password"
+              placeholder={t('staff.confirmPw')}
               placeholderTextColor={COLORS.textLight}
               secureTextEntry
             />
             {cpError ? <Text style={styles.lockError}>{cpError}</Text> : null}
             <View style={styles.cpActions}>
               <TouchableOpacity style={[styles.cpBtn, styles.cpBtnOutline]} onPress={() => setChangePwVisible(false)}>
-                <Text style={styles.cpBtnOutlineText}>Cancel</Text>
+                <Text style={styles.cpBtnOutlineText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.cpBtn} onPress={handleChangePassword}>
                 <Text style={styles.cpBtnText}>Save</Text>
@@ -250,6 +257,7 @@ export default function StaffScreen() {
 
 // ── PAYROLL TAB ──────────────────────────────────────────────────
 function PayrollTab({ employees, payrollEntries, salesRecords, dispatch }) {
+  const { t, formatCurrency } = useI18n();
   const [weekOf, setWeekOf] = useState(getWeekOf());
   const [modalVisible, setModalVisible] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -282,25 +290,26 @@ function PayrollTab({ employees, payrollEntries, salesRecords, dispatch }) {
   }
   function validate() {
     const errs={};
-    if (!form.employeeId) errs.employeeId='Select an employee';
-    if (!form.hours||isNaN(Number(form.hours))||Number(form.hours)<0) errs.hours='Enter valid hours';
-    if (!form.rate ||isNaN(Number(form.rate)) ||Number(form.rate)<=0)  errs.rate='Enter valid rate';
+    if (!form.employeeId) errs.employeeId=t('staff.errSelectEmp');
+    if (!form.hours||isNaN(Number(form.hours))||Number(form.hours)<0) errs.hours=t('staff.errHours');
+    if (!form.rate ||isNaN(Number(form.rate)) ||Number(form.rate)<=0)  errs.rate=t('staff.errRate');
     setErrors(errs);
     return Object.keys(errs).length===0;
   }
   function handleSave() {
     if (!validate()) return;
     const dup = payrollEntries.find(e=>e.weekOf===weekOf && e.employeeId===form.employeeId && e.id!==editing?.id);
-    if (dup) { Alert.alert('Duplicate','This employee already has an entry for this week.'); return; }
+    if (dup) { Alert.alert(t('staff.errDuplicate'), t('staff.errEmpDuplicate')); return; }
     const data = { id:editing?.id||generateId(), weekOf, employeeId:form.employeeId, hours:Number(form.hours), rate:Number(form.rate), cashAdvance:Number(form.cashAdvance)||0, extraCheck:Number(form.extraCheck)||0, tips:Number(form.tips)||0 };
     dispatch({ type: editing ? 'UPDATE_PAYROLL_ENTRY' : 'ADD_PAYROLL_ENTRY', payload:data });
     setModalVisible(false);
   }
   function handleDelete(entry) {
     const emp = employees.find(e=>e.id===entry.employeeId);
-    Alert.alert('Delete Entry',`Delete entry for "${emp?.name||'employee'}"?`,[
-      { text:'Cancel', style:'cancel' },
-      { text:'Delete', style:'destructive', onPress:()=>dispatch({ type:'DELETE_PAYROLL_ENTRY', payload:entry.id }) },
+    const name = emp?.name || 'employee';
+    Alert.alert(t('staff.deleteEntryTitle'), t('staff.deleteEntryMsg', { empName: name }),[
+      { text: t('common.cancel'), style:'cancel' },
+      { text: t('common.delete'), style:'destructive', onPress:()=>dispatch({ type:'DELETE_PAYROLL_ENTRY', payload:entry.id }) },
     ]);
   }
   function pickEmployee(id) {
@@ -318,35 +327,44 @@ function PayrollTab({ employees, payrollEntries, salesRecords, dispatch }) {
     <View style={{flex:1}}>
       <View style={styles.weekNav}>
         <TouchableOpacity onPress={()=>setWeekOf(w=>offsetWeek(w,-1))} style={styles.weekArrow}><Text style={styles.weekArrowTxt}>‹</Text></TouchableOpacity>
-        <View style={styles.weekInfo}><Text style={styles.weekLbl}>Week of</Text><Text style={styles.weekRange}>{formatWeekRange(weekOf)}</Text></View>
+        <View style={styles.weekInfo}><Text style={styles.weekLbl}>{t('staff.weekOf')}</Text><Text style={styles.weekRange}>{formatWeekRange(weekOf)}</Text></View>
         <TouchableOpacity onPress={()=>setWeekOf(w=>offsetWeek(w,+1))} style={styles.weekArrow}><Text style={styles.weekArrowTxt}>›</Text></TouchableOpacity>
       </View>
       <View style={styles.pSummary}>
-        <View style={styles.pSumItem}><Text style={styles.pSumVal}>{weekEntries.length}</Text><Text style={styles.pSumLbl}>Employees</Text></View>
+        <View style={styles.pSumItem}><Text style={styles.pSumVal}>{weekEntries.length}</Text><Text style={styles.pSumLbl}>{t('staff.employees')}</Text></View>
         <View style={styles.pSumDiv} />
-        <View style={styles.pSumItem}><Text style={styles.pSumVal}>{totals.hours.toFixed(1)}h</Text><Text style={styles.pSumLbl}>Total Hours</Text></View>
+        <View style={styles.pSumItem}><Text style={styles.pSumVal}>{totals.hours.toFixed(1)}h</Text><Text style={styles.pSumLbl}>{t('staff.totalHours')}</Text></View>
         <View style={styles.pSumDiv} />
-        <View style={styles.pSumItem}><Text style={[styles.pSumVal,{fontSize:14}]}>{formatCurrency(totals.grand)}</Text><Text style={styles.pSumLbl}>Grand Total</Text></View>
+        <View style={styles.pSumItem}><Text style={[styles.pSumVal,{fontSize:14}]}>{formatCurrency(totals.grand)}</Text><Text style={styles.pSumLbl}>{t('staff.grandTotal')}</Text></View>
       </View>
 
       <ScrollView style={{flex:1}} contentContainerStyle={{paddingBottom:24}}>
         {totalSalesTips !== null && (
           <View style={[styles.tipBanner, Math.abs(allocatedTips-totalSalesTips)<0.01 ? styles.tipOk : styles.tipWarn]}>
             <Text style={styles.tipBannerTxt}>
-              💰 Tips: {formatCurrency(totalSalesTips)} total · Allocated: {formatCurrency(allocatedTips)}
-              {Math.abs(allocatedTips-totalSalesTips)>0.01 ? `  ⚠️ ${formatCurrency(Math.abs(totalSalesTips-allocatedTips))} remaining` : '  ✅'}
+              {t('staff.tipsLine', { totalTips: formatCurrency(totalSalesTips), allocatedTips: formatCurrency(allocatedTips) })}
+              {Math.abs(allocatedTips-totalSalesTips)>0.01 ? `  ${t('staff.tipsRemaining', { remaining: formatCurrency(Math.abs(totalSalesTips-allocatedTips)) })}` : '  ✅'}
             </Text>
           </View>
         )}
 
         {weekEntries.length===0 ? (
-          <EmptyState icon="📋" message="No entries for this week.&#10;Tap + Add Entry." />
+          <EmptyState icon="📋" message={t('staff.noPayroll')} />
         ) : (
           <View style={styles.tableWrap}>
             <ScrollView horizontal showsHorizontalScrollIndicator>
               <View style={{width:TABLE_W}}>
                 <View style={[styles.tRow, styles.tHead]}>
-                  {[['Name',COL.name],['Hours',COL.hours],['Rate',COL.rate],['Cash Adv.',COL.cash],['Main Pay',COL.main],['+Check',COL.check],['Tips',COL.tips],['Grand Total',COL.grand]].map(([lbl,w],i)=>(
+                  {[
+                    [t('staff.colName'),COL.name],
+                    [t('staff.colHours'),COL.hours],
+                    [t('staff.colRate'),COL.rate],
+                    [t('staff.colCashAdv'),COL.cash],
+                    [t('staff.colMainPay'),COL.main],
+                    [t('staff.colCheck'),COL.check],
+                    [t('staff.colTips'),COL.tips],
+                    [t('staff.colGrand'),COL.grand],
+                  ].map(([lbl,w],i)=>(
                     <Text key={i} style={[styles.thCell,{width:w},i>0&&styles.thRight]}>{lbl}</Text>
                   ))}
                 </View>
@@ -382,20 +400,20 @@ function PayrollTab({ employees, payrollEntries, salesRecords, dispatch }) {
                 </View>
               </View>
             </ScrollView>
-            <Text style={styles.tHint}>Tap to edit · Long-press to delete</Text>
+            <Text style={styles.tHint}>{t('staff.tapToEdit')}</Text>
           </View>
         )}
-        <TouchableOpacity style={styles.addBtn} onPress={openAdd}><Text style={styles.addBtnTxt}>+ Add Entry</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.addBtn} onPress={openAdd}><Text style={styles.addBtnTxt}>{t('staff.addEntryBtn')}</Text></TouchableOpacity>
       </ScrollView>
 
       <Modal visible={modalVisible} animationType="slide" transparent>
         <View style={styles.overlay}>
           <ScrollView keyboardShouldPersistTaps="handled">
             <View style={styles.modalBox}>
-              <Text style={styles.modalTitle}>{editing?'Edit Payroll Entry':'Add Payroll Entry'}</Text>
-              <Text style={styles.modalSub}>Week: {formatWeekRange(weekOf)}</Text>
+              <Text style={styles.modalTitle}>{editing ? t('staff.editPayrollTitle') : t('staff.addPayrollTitle')}</Text>
+              <Text style={styles.modalSub}>{t('staff.weekRange', { weekRange: formatWeekRange(weekOf) })}</Text>
 
-              <Text style={styles.pickLbl}>👨‍🍳 Kitchen</Text>
+              <Text style={styles.pickLbl}>{t('staff.kitchen')}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginBottom:6}}>
                 {kitchen.map(emp=>(
                   <TouchableOpacity key={emp.id} style={[styles.empChip,{borderColor:'#FF8A65'},form.employeeId===emp.id&&styles.empChipOn]} onPress={()=>pickEmployee(emp.id)}>
@@ -403,7 +421,7 @@ function PayrollTab({ employees, payrollEntries, salesRecords, dispatch }) {
                   </TouchableOpacity>
                 ))}
               </ScrollView>
-              <Text style={[styles.pickLbl,{marginTop:4}]}>🍽️ Waiters</Text>
+              <Text style={[styles.pickLbl,{marginTop:4}]}>{t('staff.waiters')}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginBottom:8}}>
                 {waiters.map(emp=>(
                   <TouchableOpacity key={emp.id} style={[styles.empChip,{borderColor:'#42A5F5'},form.employeeId===emp.id&&styles.empChipOn]} onPress={()=>pickEmployee(emp.id)}>
@@ -414,33 +432,33 @@ function PayrollTab({ employees, payrollEntries, salesRecords, dispatch }) {
               {errors.employeeId&&<Text style={styles.errTxt}>{errors.employeeId}</Text>}
 
               <View style={styles.row2}>
-                <View style={{flex:1,marginRight:8}}><Input label="Hours" value={form.hours} onChangeText={v=>setForm(f=>({...f,hours:v}))} placeholder="144.00" keyboardType="numeric" right="hrs" error={errors.hours}/></View>
-                <View style={{flex:1}}><Input label="Rate" value={form.rate} onChangeText={v=>setForm(f=>({...f,rate:v}))} placeholder="13.50" keyboardType="numeric" right="$/hr" error={errors.rate}/></View>
+                <View style={{flex:1,marginRight:8}}><Input label={t('staff.hours')} value={form.hours} onChangeText={v=>setForm(f=>({...f,hours:v}))} placeholder="144.00" keyboardType="numeric" right="hrs" error={errors.hours}/></View>
+                <View style={{flex:1}}><Input label={t('staff.rate')} value={form.rate} onChangeText={v=>setForm(f=>({...f,rate:v}))} placeholder="13.50" keyboardType="numeric" right={t('staff.rateUnit')} error={errors.rate}/></View>
               </View>
               <View style={styles.row2}>
-                <View style={{flex:1,marginRight:8}}><Input label="Cash Advance" value={form.cashAdvance} onChangeText={v=>setForm(f=>({...f,cashAdvance:v}))} placeholder="0.00" keyboardType="numeric" right="$"/></View>
-                <View style={{flex:1}}><Input label="+Check (2nd)" value={form.extraCheck} onChangeText={v=>setForm(f=>({...f,extraCheck:v}))} placeholder="0.00" keyboardType="numeric" right="$"/></View>
+                <View style={{flex:1,marginRight:8}}><Input label={t('staff.cashAdvance')} value={form.cashAdvance} onChangeText={v=>setForm(f=>({...f,cashAdvance:v}))} placeholder="0.00" keyboardType="numeric" right="$"/></View>
+                <View style={{flex:1}}><Input label={t('staff.checkLabel')} value={form.extraCheck} onChangeText={v=>setForm(f=>({...f,extraCheck:v}))} placeholder="0.00" keyboardType="numeric" right="$"/></View>
               </View>
               {selEmp&&(selEmp.group==='waiter'||selEmp.tipEligible)&&(
                 <>
                   <Input label={`Tips 💰${selEmp.group==='kitchen'?' (share)':''}`} value={form.tips} onChangeText={v=>setForm(f=>({...f,tips:v}))} placeholder="0.00" keyboardType="numeric" right="$"/>
-                  {totalSalesTips!==null&&<Text style={{fontSize:11,color:'#2E7D32',marginTop:-8,marginBottom:8}}>Week tips: {formatCurrency(totalSalesTips)} · {formatCurrency(allocatedTips)} allocated</Text>}
+                  {totalSalesTips!==null&&<Text style={{fontSize:11,color:'#2E7D32',marginTop:-8,marginBottom:8}}>{t('staff.weekTips', { totalTips: formatCurrency(totalSalesTips), allocated: formatCurrency(allocatedTips) })}</Text>}
                 </>
               )}
 
               {form.hours&&form.rate&&(
                 <View style={styles.preview}>
-                  <View style={styles.previewRow}><Text style={styles.prevLbl}>Hours × Rate</Text><Text style={styles.prevVal}>{formatCurrency((Number(form.hours)||0)*(Number(form.rate)||0))}</Text></View>
-                  {Number(form.cashAdvance)>0&&<View style={styles.previewRow}><Text style={styles.prevLbl}>+ Cash Advance</Text><Text style={styles.prevVal}>{formatCurrency(Number(form.cashAdvance))}</Text></View>}
-                  <View style={[styles.previewRow,styles.previewSep]}><Text style={[styles.prevLbl,{fontWeight:'700'}]}>Main Pay</Text><Text style={[styles.prevVal,{fontWeight:'700',color:COLORS.primary}]}>{formatCurrency(previewMain)}</Text></View>
-                  {Number(form.extraCheck)>0&&<View style={styles.previewRow}><Text style={styles.prevLbl}>+ Check</Text><Text style={styles.prevVal}>{formatCurrency(Number(form.extraCheck))}</Text></View>}
-                  {Number(form.tips)>0&&<View style={styles.previewRow}><Text style={styles.prevLbl}>+ Tips</Text><Text style={[styles.prevVal,{color:'#2E7D32'}]}>{formatCurrency(Number(form.tips))}</Text></View>}
-                  {(Number(form.extraCheck)>0||Number(form.tips)>0)&&<View style={[styles.previewRow,styles.previewSep]}><Text style={[styles.prevLbl,{fontWeight:'800'}]}>Grand Total</Text><Text style={[styles.prevVal,{fontWeight:'800',color:'#1B5E20',fontSize:16}]}>{formatCurrency(previewGrand)}</Text></View>}
+                  <View style={styles.previewRow}><Text style={styles.prevLbl}>{t('staff.mainPayCalc')}</Text><Text style={styles.prevVal}>{formatCurrency((Number(form.hours)||0)*(Number(form.rate)||0))}</Text></View>
+                  {Number(form.cashAdvance)>0&&<View style={styles.previewRow}><Text style={styles.prevLbl}>{t('staff.plusCashAdv')}</Text><Text style={styles.prevVal}>{formatCurrency(Number(form.cashAdvance))}</Text></View>}
+                  <View style={[styles.previewRow,styles.previewSep]}><Text style={[styles.prevLbl,{fontWeight:'700'}]}>{t('staff.mainPay')}</Text><Text style={[styles.prevVal,{fontWeight:'700',color:COLORS.primary}]}>{formatCurrency(previewMain)}</Text></View>
+                  {Number(form.extraCheck)>0&&<View style={styles.previewRow}><Text style={styles.prevLbl}>{t('staff.plusCheck')}</Text><Text style={styles.prevVal}>{formatCurrency(Number(form.extraCheck))}</Text></View>}
+                  {Number(form.tips)>0&&<View style={styles.previewRow}><Text style={styles.prevLbl}>{t('staff.plusTips')}</Text><Text style={[styles.prevVal,{color:'#2E7D32'}]}>{formatCurrency(Number(form.tips))}</Text></View>}
+                  {(Number(form.extraCheck)>0||Number(form.tips)>0)&&<View style={[styles.previewRow,styles.previewSep]}><Text style={[styles.prevLbl,{fontWeight:'800'}]}>{t('staff.grandTotal')}</Text><Text style={[styles.prevVal,{fontWeight:'800',color:'#1B5E20',fontSize:16}]}>{formatCurrency(previewGrand)}</Text></View>}
                 </View>
               )}
               <View style={styles.modalFoot}>
-                <Button label="Cancel" variant="outline" onPress={()=>setModalVisible(false)} style={{flex:1,marginRight:8}}/>
-                <Button label={editing?'Update':'Add'} onPress={handleSave} style={{flex:1}}/>
+                <Button label={t('common.cancel')} variant="outline" onPress={()=>setModalVisible(false)} style={{flex:1,marginRight:8}}/>
+                <Button label={editing ? t('common.update') : t('common.add')} onPress={handleSave} style={{flex:1}}/>
               </View>
             </View>
           </ScrollView>
@@ -452,10 +470,13 @@ function PayrollTab({ employees, payrollEntries, salesRecords, dispatch }) {
 
 // ── EMPLOYEES TAB ─────────────────────────────────────────────────
 function EmployeesTab({ employees, dispatch }) {
+  const { t, formatCurrency } = useI18n();
   const [modalVisible, setModalVisible] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ name:'', hourlyRate:'', group:'kitchen', tipEligible:false, schedule:{...DEF_SCHED} });
   const [errors, setErrors] = useState({});
+
+  const GROUP_LABEL = { kitchen: t('staff.kitchenGroup'), waiter: t('staff.waiterGroup') };
 
   const kitchen = employees.filter(e=>e.group==='kitchen');
   const waiters  = employees.filter(e=>e.group==='waiter');
@@ -475,7 +496,7 @@ function EmployeesTab({ employees, dispatch }) {
   function validate() {
     const errs={};
     if (!form.name.trim())  errs.name='Enter name';
-    if (!form.hourlyRate||isNaN(Number(form.hourlyRate))||Number(form.hourlyRate)<=0) errs.hourlyRate='Enter valid rate';
+    if (!form.hourlyRate||isNaN(Number(form.hourlyRate))||Number(form.hourlyRate)<=0) errs.hourlyRate=t('staff.errRate');
     setErrors(errs);
     return Object.keys(errs).length===0;
   }
@@ -486,9 +507,9 @@ function EmployeesTab({ employees, dispatch }) {
     setModalVisible(false);
   }
   function handleDelete(emp) {
-    Alert.alert('Delete Employee',`Delete "${emp.name}"?\nAll payroll entries also removed.`,[
-      { text:'Cancel', style:'cancel' },
-      { text:'Delete', style:'destructive', onPress:()=>dispatch({ type:'DELETE_EMPLOYEE', payload:emp.id }) },
+    Alert.alert(t('staff.deleteEmpTitle'), t('staff.deleteEmpMsg', { empName: emp.name }),[
+      { text: t('common.cancel'), style:'cancel' },
+      { text: t('common.delete'), style:'destructive', onPress:()=>dispatch({ type:'DELETE_EMPLOYEE', payload:emp.id }) },
     ]);
   }
   function handleSchedule(day, action, value) {
@@ -507,7 +528,7 @@ function EmployeesTab({ employees, dispatch }) {
       <View key={label}>
         <Text style={styles.groupHdr}>{label}</Text>
         {list.length===0
-          ? <Text style={styles.groupEmpty}>None yet</Text>
+          ? <Text style={styles.groupEmpty}>{t('common.none')}</Text>
           : list.map(emp=>{
               const wkHrs = calcEmployeeWeeklyHours(emp);
               return (
@@ -525,8 +546,8 @@ function EmployeesTab({ employees, dispatch }) {
                       </View>
                     </View>
                     <View style={styles.empBtns}>
-                      <Button label="Edit" variant="outline" onPress={()=>openEdit(emp)} style={styles.smBtn}/>
-                      <Button label="Del"  variant="danger"  onPress={()=>handleDelete(emp)} style={styles.smBtn}/>
+                      <Button label={t('staff.editBtn')} variant="outline" onPress={()=>openEdit(emp)} style={styles.smBtn}/>
+                      <Button label={t('staff.delBtn')}  variant="danger"  onPress={()=>handleDelete(emp)} style={styles.smBtn}/>
                     </View>
                   </View>
                   {/* Show schedule summary if set */}
@@ -553,37 +574,37 @@ function EmployeesTab({ employees, dispatch }) {
   return (
     <View style={{flex:1}}>
       <ScrollView contentContainerStyle={{padding:16,paddingBottom:24}}>
-        <SectionTitle text="Employees" action="+ Add" onAction={openAdd}/>
+        <SectionTitle text={t('staff.employeesTitle')} action={t('staff.addBtn')} onAction={openAdd}/>
         {/* Kitchen weighted rate info */}
         <View style={styles.rateInfoRow}>
           <View style={[styles.rateInfoCard,{borderColor:'#FF8A65'}]}>
-            <Text style={styles.rateInfoLbl}>Kitchen rate/min</Text>
+            <Text style={styles.rateInfoLbl}>{t('staff.kitchenRateMin')}</Text>
             <Text style={[styles.rateInfoVal,{color:'#E65100'}]}>
               {formatCurrency(calcGroupWeightedRate(employees,'kitchen')/60)}
             </Text>
-            <Text style={styles.rateInfoSub}>weighted avg</Text>
+            <Text style={styles.rateInfoSub}>{t('staff.weightedAvg')}</Text>
           </View>
           <View style={[styles.rateInfoCard,{borderColor:'#42A5F5'}]}>
-            <Text style={styles.rateInfoLbl}>Waiter rate/min</Text>
+            <Text style={styles.rateInfoLbl}>{t('staff.waiterRateMin')}</Text>
             <Text style={[styles.rateInfoVal,{color:'#1565C0'}]}>
               {formatCurrency(calcGroupWeightedRate(employees,'waiter')/60)}
             </Text>
-            <Text style={styles.rateInfoSub}>weighted avg</Text>
+            <Text style={styles.rateInfoSub}>{t('staff.weightedAvg')}</Text>
           </View>
         </View>
-        {renderGroup('👨‍🍳 Kitchen', kitchen, '#FF8A65')}
+        {renderGroup(t('staff.kitchenGroup'), kitchen, '#FF8A65')}
         <View style={{height:16}}/>
-        {renderGroup('🍽️ Waiters', waiters, '#42A5F5')}
+        {renderGroup(t('staff.waiterGroup'), waiters, '#42A5F5')}
       </ScrollView>
 
       <Modal visible={modalVisible} animationType="slide" transparent>
         <View style={styles.overlay}>
           <ScrollView keyboardShouldPersistTaps="handled">
             <View style={styles.modalBox}>
-              <Text style={styles.modalTitle}>{editing?'Edit Employee':'Add Employee'}</Text>
+              <Text style={styles.modalTitle}>{editing ? t('staff.editEmpTitle') : t('staff.addEmpTitle')}</Text>
 
               {/* Group toggle */}
-              <Text style={styles.pickLbl}>Role</Text>
+              <Text style={styles.pickLbl}>{t('staff.role')}</Text>
               <View style={styles.groupToggle}>
                 {['kitchen','waiter'].map(g=>(
                   <TouchableOpacity key={g} style={[styles.groupBtn,form.group===g&&styles.groupBtnOn]} onPress={()=>setForm(f=>({...f,group:g}))}>
@@ -592,33 +613,33 @@ function EmployeesTab({ employees, dispatch }) {
                 ))}
               </View>
 
-              <Input label="Full Name" value={form.name} onChangeText={v=>setForm(f=>({...f,name:v}))} placeholder="e.g. Huy T Pham" error={errors.name}/>
-              <Input label="Hourly Rate" value={form.hourlyRate} onChangeText={v=>setForm(f=>({...f,hourlyRate:v}))} placeholder="13.50" keyboardType="numeric" right="$/hr" error={errors.hourlyRate}/>
+              <Input label={t('staff.fullName')} value={form.name} onChangeText={v=>setForm(f=>({...f,name:v}))} placeholder={t('staff.namePlaceholder')} error={errors.name}/>
+              <Input label={t('staff.hourlyRate')} value={form.hourlyRate} onChangeText={v=>setForm(f=>({...f,hourlyRate:v}))} placeholder="13.50" keyboardType="numeric" right={t('staff.rateUnitLabel')} error={errors.hourlyRate}/>
 
               {form.group==='kitchen'?(
                 <View style={styles.switchRow}>
                   <View style={{flex:1,marginRight:12}}>
-                    <Text style={styles.switchLbl}>Tip Share Eligible</Text>
-                    <Text style={styles.switchHint}>Can receive a portion of tips</Text>
+                    <Text style={styles.switchLbl}>{t('staff.tipShareEligible')}</Text>
+                    <Text style={styles.switchHint}>{t('staff.tipShareNote')}</Text>
                   </View>
                   <Switch value={form.tipEligible} onValueChange={v=>setForm(f=>({...f,tipEligible:v}))} trackColor={{false:COLORS.border,true:COLORS.primary}} thumbColor={form.tipEligible?'#FFF':'#DDD'}/>
                 </View>
               ):(
                 <View style={styles.switchRow}>
                   <View style={{flex:1,marginRight:12}}>
-                    <Text style={styles.switchLbl}>Receives Tips</Text>
-                    <Text style={styles.switchHint}>Waiters always receive tips</Text>
+                    <Text style={styles.switchLbl}>{t('staff.receivesTips')}</Text>
+                    <Text style={styles.switchHint}>{t('staff.waitersTipsNote')}</Text>
                   </View>
                   <Switch value={true} disabled trackColor={{true:'#42A5F5'}} thumbColor="#FFF"/>
                 </View>
               )}
 
               <ScheduleEditor schedule={form.schedule} onChange={handleSchedule}/>
-              {formWeeklyHrs>0&&<Text style={{fontSize:12,color:COLORS.primary,fontWeight:'600',textAlign:'right',marginTop:4}}>{formWeeklyHrs.toFixed(1)} hrs/week × {formatCurrency(Number(form.hourlyRate)||0)}/hr = {formatCurrency(formWeeklyHrs*(Number(form.hourlyRate)||0))}/week</Text>}
+              {formWeeklyHrs>0&&<Text style={{fontSize:12,color:COLORS.primary,fontWeight:'600',textAlign:'right',marginTop:4}}>{t('staff.weeklyTotal', { hours: formWeeklyHrs.toFixed(1), rate: formatCurrency(Number(form.hourlyRate)||0), weekly: formatCurrency(formWeeklyHrs*(Number(form.hourlyRate)||0)) })}</Text>}
 
               <View style={[styles.modalFoot,{marginTop:20}]}>
-                <Button label="Cancel" variant="outline" onPress={()=>setModalVisible(false)} style={{flex:1,marginRight:8}}/>
-                <Button label={editing?'Update':'Add'} onPress={handleSave} style={{flex:1}}/>
+                <Button label={t('common.cancel')} variant="outline" onPress={()=>setModalVisible(false)} style={{flex:1,marginRight:8}}/>
+                <Button label={editing ? t('common.update') : t('common.add')} onPress={handleSave} style={{flex:1}}/>
               </View>
             </View>
           </ScrollView>

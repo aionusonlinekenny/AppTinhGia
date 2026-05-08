@@ -10,7 +10,7 @@ import {
   TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useApp, generateId, formatCurrency, calculateDishCost, calcGroupWeightedRate, getIngredientDishUnit, getIngredientPricePerDishUnit, calculateStockCostPerOz } from '../context/AppContext';
+import { useApp, generateId, calculateDishCost, calcGroupWeightedRate, getIngredientDishUnit, getIngredientPricePerDishUnit, calculateStockCostPerOz } from '../context/AppContext';
 import {
   COLORS,
   Header,
@@ -21,6 +21,7 @@ import {
   EmptyState,
   Divider,
 } from '../components';
+import { useI18n } from '../i18n';
 
 const DISH_CATEGORIES = ['Appetizer', 'Main Course', 'Side Dish', 'Pasta & Rice', 'Soup', 'Dessert', 'Beverage', 'Other'];
 const ING_CATEGORY_ICONS = {
@@ -40,6 +41,7 @@ const CATEGORY_ICONS = {
 
 export default function DishesScreen({ navigation }) {
   const { state, dispatch } = useApp();
+  const { t, formatCurrency, config } = useI18n();
   const { dishes, ingredients, employees, stockRecipes = [] } = state;
   const [modalVisible, setModalVisible] = useState(false);
   const [step, setStep] = useState(1); // 1: basic info, 2: ingredients, 3: labor
@@ -47,7 +49,7 @@ export default function DishesScreen({ navigation }) {
   const [search, setSearch] = useState('');
   const [form, setForm] = useState({
     name: '',
-    category: 'Món chính',
+    category: 'Main Course',
     description: '',
     dishIngredients: [],
     laborTime: [],
@@ -55,6 +57,16 @@ export default function DishesScreen({ navigation }) {
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [ingSearch, setIngSearch] = useState('');
   const [ingCategory, setIngCategory] = useState('All');
+
+  const categoryLabel = (cat) => {
+    const map = {
+      'Appetizer': t('dishes.catAppetizer'), 'Main Course': t('dishes.catMain'),
+      'Side Dish': t('dishes.catSide'), 'Pasta & Rice': t('dishes.catPasta'),
+      'Soup': t('dishes.catSoup'), 'Dessert': t('dishes.catDessert'),
+      'Beverage': t('dishes.catBeverage'), 'Other': t('dishes.catBeverage'),
+    };
+    return map[cat] || cat;
+  };
 
   const filtered = dishes.filter(d =>
     d.name.toLowerCase().includes(search.toLowerCase())
@@ -92,7 +104,7 @@ export default function DishesScreen({ navigation }) {
 
   function handleSave() {
     if (!form.name.trim()) {
-      Alert.alert('Error', 'Please enter a dish name');
+      Alert.alert('Error', t('dishes.errDishName'));
       return;
     }
     const data = {
@@ -114,10 +126,10 @@ export default function DishesScreen({ navigation }) {
   }
 
   function handleDelete(dish) {
-    Alert.alert('Delete Dish', `Delete "${dish.name}"?`, [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('dishes.deleteTitle'), t('dishes.deleteMsg', { dishName: dish.name }), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('common.delete'),
         style: 'destructive',
         onPress: () => dispatch({ type: 'DELETE_DISH', payload: dish.id }),
       },
@@ -178,8 +190,8 @@ export default function DishesScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <Header
-        title="Dishes"
-        subtitle="Manage recipes and calculate food cost"
+        title={t('dishes.title')}
+        subtitle={t('dishes.subtitle')}
       />
       <View style={styles.searchRow}>
         <View style={styles.searchBox}>
@@ -188,7 +200,7 @@ export default function DishesScreen({ navigation }) {
             style={styles.searchInput}
             value={search}
             onChangeText={setSearch}
-            placeholder="Search dishes..."
+            placeholder={t('dishes.searchPlaceholder')}
             placeholderTextColor={COLORS.textLight}
           />
         </View>
@@ -203,8 +215,8 @@ export default function DishesScreen({ navigation }) {
             icon="🍽️"
             message={
               dishes.length === 0
-                ? "No dishes yet.\nTap + to add your first dish!"
-                : "No dishes found"
+                ? t('dishes.noDishesYet')
+                : t('dishes.noDishesFound')
             }
           />
         ) : (
@@ -220,7 +232,7 @@ export default function DishesScreen({ navigation }) {
                   </View>
                   <View style={styles.dishInfo}>
                     <Text style={styles.dishName}>{dish.name}</Text>
-                    <Text style={styles.dishCategory}>{dish.category}</Text>
+                    <Text style={styles.dishCategory}>{categoryLabel(dish.category)}</Text>
                     {dish.description ? (
                       <Text style={styles.dishDesc}>{dish.description}</Text>
                     ) : null}
@@ -229,25 +241,25 @@ export default function DishesScreen({ navigation }) {
                 <Divider />
                 <View style={styles.costGrid}>
                   <View style={styles.costItem}>
-                    <Text style={styles.costLabel}>🥕 Ingredients</Text>
+                    <Text style={styles.costLabel}>{t('dishes.ingredientsLabel')}</Text>
                     <Text style={styles.costVal}>{formatCurrency(cost.ingredientCost)}</Text>
                   </View>
                   <View style={styles.costItem}>
-                    <Text style={styles.costLabel}>👤 Labor</Text>
+                    <Text style={styles.costLabel}>{t('dishes.laborLabel')}</Text>
                     <Text style={styles.costVal}>{formatCurrency(cost.laborCost)}</Text>
                   </View>
                   <View style={styles.costItem}>
-                    <Text style={styles.costLabel}>⚡ Overhead</Text>
+                    <Text style={styles.costLabel}>{t('dishes.overheadLabel')}</Text>
                     <Text style={styles.costVal}>{formatCurrency(cost.overheadPerDish)}</Text>
                   </View>
                   <View style={[styles.costItem, styles.costTotal]}>
-                    <Text style={styles.costTotalLabel}>Food Cost</Text>
+                    <Text style={styles.costTotalLabel}>{t('dishes.foodCost')}</Text>
                     <Text style={styles.costTotalVal}>{formatCurrency(cost.totalCost)}</Text>
                   </View>
                 </View>
                 <View style={styles.dishActions}>
                   <Button
-                    label="Price Menu"
+                    label={t('dishes.menuPrice')}
                     variant="success"
                     onPress={() =>
                       navigation.navigate('Calculator', { dishId: dish.id })
@@ -255,13 +267,13 @@ export default function DishesScreen({ navigation }) {
                     style={[styles.actionBtn, { flex: 2 }]}
                   />
                   <Button
-                    label="Edit"
+                    label={t('common.edit')}
                     variant="outline"
                     onPress={() => openEdit(dish)}
                     style={styles.actionBtn}
                   />
                   <Button
-                    label="Delete"
+                    label={t('common.delete')}
                     variant="danger"
                     onPress={() => handleDelete(dish)}
                     style={styles.actionBtn}
@@ -302,18 +314,18 @@ export default function DishesScreen({ navigation }) {
               {step === 1 && (
                 <View>
                   <Input
-                    label="Dish Name *"
+                    label={t('dishes.dishName')}
                     value={form.name}
                     onChangeText={v => setForm(f => ({ ...f, name: v }))}
-                    placeholder="e.g. NY Strip Steak, Caesar Salad..."
+                    placeholder={t('dishes.dishNamePlaceholder')}
                   />
-                  <Text style={styles.pickLabel}>Category</Text>
+                  <Text style={styles.pickLabel}>{t('dishes.category')}</Text>
                   <TouchableOpacity
                     style={styles.pickBtn}
                     onPress={() => setShowCategoryPicker(!showCategoryPicker)}
                   >
                     <Text style={styles.pickValue}>
-                      {CATEGORY_ICONS[form.category]} {form.category}
+                      {CATEGORY_ICONS[form.category]} {categoryLabel(form.category)}
                     </Text>
                     <Text style={styles.pickArrow}>▼</Text>
                   </TouchableOpacity>
@@ -329,17 +341,17 @@ export default function DishesScreen({ navigation }) {
                           }}
                         >
                           <Text style={[styles.pickerItemText, form.category === c && styles.pickerItemTextActive]}>
-                            {CATEGORY_ICONS[c]} {c}
+                            {CATEGORY_ICONS[c]} {categoryLabel(c)}
                           </Text>
                         </TouchableOpacity>
                       ))}
                     </View>
                   )}
                   <Input
-                    label="Notes (optional)"
+                    label={t('dishes.notes')}
                     value={form.description}
                     onChangeText={v => setForm(f => ({ ...f, description: v }))}
-                    placeholder="Short description..."
+                    placeholder={t('dishes.notesPlaceholder')}
                     multiline
                   />
                 </View>
@@ -351,14 +363,14 @@ export default function DishesScreen({ navigation }) {
                   {form.dishIngredients.length > 0 ? (
                     <View style={styles.selectedSection}>
                       <Text style={styles.sectionLabel}>
-                        Selected ingredients ({form.dishIngredients.length})
+                        {t('dishes.selectedIngredients', { count: form.dishIngredients.length })}
                       </Text>
                       {form.dishIngredients.map(item => {
                         const isStock = item.type === 'stock';
                         const ing = isStock ? null : ingredients.find(i => i.id === item.ingredientId);
                         const stock = isStock ? stockRecipes.find(s => s.id === item.ingredientId) : null;
                         if (!ing && !stock) return null;
-                        const dishUnit = isStock ? 'oz' : getIngredientDishUnit(ing);
+                        const dishUnit = isStock ? config.yieldUnit : getIngredientDishUnit(ing);
                         const pricePerDishUnit = isStock ? calculateStockCostPerOz(stock, state) : getIngredientPricePerDishUnit(ing);
                         const itemCost = (parseFloat(item.quantity) || 0) * pricePerDishUnit;
                         const displayName = isStock ? stock.name : ing.name;
@@ -370,7 +382,7 @@ export default function DishesScreen({ navigation }) {
                               <Text style={styles.selectedIngName}>{displayName}</Text>
                               <Text style={styles.selectedIngPrice}>
                                 {formatCurrency(pricePerDishUnit)}/{dishUnit}
-                                {isStock ? ' (broth)' : ''}
+                                {isStock ? ` (${t('dishes.broth')})` : ''}
                               </Text>
                             </View>
                             <View style={styles.selectedIngQtyRow}>
@@ -395,7 +407,7 @@ export default function DishesScreen({ navigation }) {
                         );
                       })}
                       <View style={styles.ingSubtotalRow}>
-                        <Text style={styles.ingSubtotalLabel}>Ingredient subtotal</Text>
+                        <Text style={styles.ingSubtotalLabel}>{t('dishes.ingredientSubtotal')}</Text>
                         <Text style={styles.ingSubtotalVal}>
                           {formatCurrency(
                             form.dishIngredients.reduce((sum, item) => {
@@ -412,19 +424,19 @@ export default function DishesScreen({ navigation }) {
                     </View>
                   ) : (
                     <View style={styles.noIngYet}>
-                      <Text style={styles.noIngYetText}>No ingredients added yet — tap + below to add</Text>
+                      <Text style={styles.noIngYetText}>{t('dishes.noIngAdded')}</Text>
                     </View>
                   )}
 
                   {/* ── Available ingredients picker ── */}
-                  <Text style={styles.sectionLabel}>Add ingredients</Text>
+                  <Text style={styles.sectionLabel}>{t('dishes.addIngredients')}</Text>
                   <View style={styles.ingSearchBox}>
                     <Text style={styles.searchIcon}>🔍</Text>
                     <TextInput
                       style={styles.ingSearchInput}
                       value={ingSearch}
                       onChangeText={setIngSearch}
-                      placeholder="Search ingredients..."
+                      placeholder={t('dishes.searchIngredients')}
                       placeholderTextColor={COLORS.textLight}
                     />
                     {ingSearch ? (
@@ -448,7 +460,7 @@ export default function DishesScreen({ navigation }) {
                         onPress={() => setIngCategory(cat)}
                       >
                         <Text style={[styles.catChipText, ingCategory === cat && styles.catChipTextActive]}>
-                          {cat === 'All' ? 'All' : `${ING_CATEGORY_ICONS[cat] || '📦'} ${cat}`}
+                          {cat === 'All' ? t('dishes.all') : `${ING_CATEGORY_ICONS[cat] || '📦'} ${cat}`}
                         </Text>
                       </TouchableOpacity>
                     ))}
@@ -456,7 +468,7 @@ export default function DishesScreen({ navigation }) {
 
                   {/* Available list */}
                   {ingredients.length === 0 ? (
-                    <EmptyState icon="🥕" message="No ingredients yet. Go to Ingredients tab to add." />
+                    <EmptyState icon="🥕" message={t('dishes.noIngYet')} />
                   ) : (
                     (() => {
                       const available = ingredients
@@ -464,7 +476,7 @@ export default function DishesScreen({ navigation }) {
                         .filter(ing => ingCategory === 'All' || ing.category === ingCategory)
                         .filter(ing => ing.name.toLowerCase().includes(ingSearch.toLowerCase()));
                       if (available.length === 0 && stockRecipes.length === 0) {
-                        return <Text style={styles.allAddedNote}>✓ All ingredients have been added</Text>;
+                        return <Text style={styles.allAddedNote}>{t('dishes.allAdded')}</Text>;
                       }
                       return available.map(ing => (
                         <TouchableOpacity
@@ -493,7 +505,7 @@ export default function DishesScreen({ navigation }) {
                   {/* Stocks & Broths section */}
                   {stockRecipes.length > 0 && (
                     <View style={{ marginTop: 12 }}>
-                      <Text style={styles.sectionLabel}>Stocks & Broths</Text>
+                      <Text style={styles.sectionLabel}>{t('dishes.stocksBroths')}</Text>
                       {stockRecipes
                         .filter(s => !form.dishIngredients.find(i => i.ingredientId === s.id && i.type === 'stock'))
                         .filter(s => s.name.toLowerCase().includes(ingSearch.toLowerCase()))
@@ -515,7 +527,7 @@ export default function DishesScreen({ navigation }) {
                               <View style={styles.availableIngInfo}>
                                 <Text style={styles.availableIngName}>{stock.name}</Text>
                                 <Text style={styles.availableIngPrice}>
-                                  {formatCurrency(costPerOz)}/oz · broth
+                                  {formatCurrency(costPerOz)}/{config.yieldUnit} · {t('dishes.broth')}
                                 </Text>
                               </View>
                               <View style={styles.addIngBtn}>
@@ -533,7 +545,7 @@ export default function DishesScreen({ navigation }) {
               {step === 3 && (
                 <View>
                   <Text style={styles.stepHint}>
-                    Enter prep time per staff group. Rates auto-calculated from employee schedules.
+                    {t('dishes.laborNote')}
                   </Text>
                   {['kitchen', 'waiter'].map(group => {
                     const rate     = calcGroupWeightedRate(employees, group);
@@ -543,13 +555,13 @@ export default function DishesScreen({ navigation }) {
                       <View key={group} style={styles.ingFormRow}>
                         <View style={styles.ingFormInfo}>
                           <Text style={styles.ingFormName}>
-                            {group === 'kitchen' ? '👨‍🍳 Kitchen' : '🍽️ Waiters'}
+                            {group === 'kitchen' ? t('dishes.kitchen') : t('dishes.waiters')}
                           </Text>
                           <Text style={styles.ingFormPrice}>
-                            {formatCurrency(rate)}/hr · {empCount} staff
+                            {t('dishes.staffRate', { rate: formatCurrency(rate), empCount })}
                           </Text>
                           <Text style={[styles.ingFormPrice, { color: COLORS.textLight }]}>
-                            = {formatCurrency(rate / 60)}/min
+                            {t('dishes.ratePerMin', { rate: formatCurrency(rate / 60) })}
                           </Text>
                         </View>
                         <View style={styles.ingFormInput}>
@@ -571,22 +583,22 @@ export default function DishesScreen({ navigation }) {
 
               {/* Cost preview */}
               <View style={styles.costPreview}>
-                <Text style={styles.costPreviewTitle}>💰 Estimated Cost</Text>
+                <Text style={styles.costPreviewTitle}>{t('dishes.estimatedCost')}</Text>
                 <View style={styles.costPreviewGrid}>
                   <View style={styles.cpItem}>
-                    <Text style={styles.cpLabel}>Ingredients</Text>
+                    <Text style={styles.cpLabel}>{t('dishes.ingredientsCost')}</Text>
                     <Text style={styles.cpVal}>{formatCurrency(previewCost.ingredientCost)}</Text>
                   </View>
                   <View style={styles.cpItem}>
-                    <Text style={styles.cpLabel}>Labor</Text>
+                    <Text style={styles.cpLabel}>{t('dishes.laborCost')}</Text>
                     <Text style={styles.cpVal}>{formatCurrency(previewCost.laborCost)}</Text>
                   </View>
                   <View style={styles.cpItem}>
-                    <Text style={styles.cpLabel}>Overhead</Text>
+                    <Text style={styles.cpLabel}>{t('dishes.overheadCost')}</Text>
                     <Text style={styles.cpVal}>{formatCurrency(previewCost.overheadPerDish)}</Text>
                   </View>
                   <View style={[styles.cpItem, { borderTopWidth: 1, borderTopColor: COLORS.border }]}>
-                    <Text style={[styles.cpLabel, { fontWeight: '700' }]}>TOTAL FOOD COST</Text>
+                    <Text style={[styles.cpLabel, { fontWeight: '700' }]}>{t('dishes.totalFoodCost')}</Text>
                     <Text style={[styles.cpVal, { color: COLORS.primary, fontWeight: '700', fontSize: 16 }]}>
                       {formatCurrency(previewCost.totalCost)}
                     </Text>
@@ -597,20 +609,20 @@ export default function DishesScreen({ navigation }) {
 
             <View style={styles.modalFooter}>
               <Button
-                label="Cancel"
+                label={t('common.cancel')}
                 variant="outline"
                 onPress={() => setModalVisible(false)}
                 style={{ flex: 1, marginRight: 8 }}
               />
               {step < 3 ? (
                 <Button
-                  label="Next →"
+                  label={t('common.next')}
                   onPress={() => setStep(s => s + 1)}
                   style={{ flex: 2 }}
                 />
               ) : (
                 <Button
-                  label={editing ? '✓ Update' : '✓ Save Dish'}
+                  label={editing ? t('dishes.updateDish') : t('dishes.saveDish')}
                   onPress={handleSave}
                   style={{ flex: 2 }}
                 />
