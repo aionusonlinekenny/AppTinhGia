@@ -46,3 +46,5 @@ android/.gradle/
 android/app/build/
 android/build/
 android/.idea/
+server/.env
+server/node_modules
