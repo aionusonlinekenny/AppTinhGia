@@ -62,8 +62,8 @@ export function LicenseProvider({ children }) {
           setStatus('active'); return;
         }
         // Time to re-check online
-        const ok = await callValidateAPI(storedKey, did);
-        if (ok) {
+        const result = await callValidateAPI(storedKey, did);
+        if (result.ok) {
           setStatus('active'); return;
         }
         // Offline / server unreachable → grace period
@@ -88,38 +88,43 @@ export function LicenseProvider({ children }) {
   }
 
   async function callValidateAPI(key, did) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10000);
     try {
       const res = await fetch(`${API_BASE}/validate.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key, deviceId: did }),
-        signal: AbortSignal.timeout(8000),
+        signal: controller.signal,
       });
-      const json = await res.json();
+      clearTimeout(timer);
+      const text = await res.text();
+      let json;
+      try { json = JSON.parse(text); } catch {
+        return { ok: false, msg: `Server error (${res.status})` };
+      }
       if (json.valid) {
         await AsyncStorage.setItem(K.VALIDATED_AT, new Date().toISOString());
-        return true;
+        return { ok: true };
       }
-      return false;
-    } catch {
-      return false; // network error → handled by caller
+      return { ok: false, msg: json.message || 'Invalid key' };
+    } catch (e) {
+      clearTimeout(timer);
+      if (e.name === 'AbortError') return { ok: false, msg: 'Request timed out. Check your internet.' };
+      return { ok: false, msg: 'Cannot connect to server. Check your internet.' };
     }
   }
 
   async function activate(key) {
     setActivating(true);
     setError('');
-    try {
-      const clean = key.trim().toUpperCase();
-      const ok = await callValidateAPI(clean, deviceId);
-      if (ok) {
-        await AsyncStorage.setItem(K.LICENSE_KEY, clean);
-        setStatus('active');
-      } else {
-        setError('Invalid key or already activated on another device.');
-      }
-    } catch {
-      setError('Cannot connect to server. Check your internet.');
+    const clean = key.trim().toUpperCase();
+    const result = await callValidateAPI(clean, deviceId);
+    if (result.ok) {
+      await AsyncStorage.setItem(K.LICENSE_KEY, clean);
+      setStatus('active');
+    } else {
+      setError(result.msg || 'Activation failed.');
     }
     setActivating(false);
   }
