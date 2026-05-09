@@ -306,6 +306,7 @@ function renderKeys() {
         }
         <button class="btn btn-warning btn-sm" onclick="manageKey('${k.key_code}','reset-devices')">🔄 Reset Devices</button>
         <button class="btn btn-outline btn-sm" onclick="copyKey('${k.key_code}')">📋 Copy Key</button>
+        <button class="btn btn-danger btn-sm" style="background:#B71C1C" onclick="deleteKey('${k.key_code}')">🗑️ Delete</button>
       </div>
     </div>
   `).join('');
@@ -368,6 +369,25 @@ async function manageKey(key, action) {
     loadKeys();
   } else {
     toast('❌ ' + (data.error || 'Failed'));
+  }
+}
+
+// ── Delete key ───────────────────────────────────────────────────
+async function deleteKey(key) {
+  if (!confirm(`⚠️ Permanently DELETE key ${key}?\n\nThis will:\n• Remove the key from the database\n• Revoke all device activations\n• Lock out the customer immediately\n\nThis cannot be undone!`)) return;
+  if (!confirm(`Are you absolutely sure you want to delete ${key}?`)) return;
+
+  const res = await fetch(`${API_BASE}/admin-manage.php`, {
+    method: 'POST',
+    headers: { 'X-Admin-Secret': ADMIN_SECRET, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ key, action: 'delete' }),
+  });
+  const data = await res.json();
+  if (data.success) {
+    toast(`🗑️ Key ${key} permanently deleted`);
+    loadKeys();
+  } else {
+    toast('❌ ' + (data.error || 'Failed to delete'));
   }
 }
 

@@ -1,9 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const TRIAL_DAYS      = 7;
-const RECHECK_DAYS    = 30;   // re-validate online every 30 days
-const GRACE_DAYS      = 60;   // offline grace period before hard-lock
+const TRIAL_DAYS  = 7;
+const GRACE_DAYS  = 60;   // offline grace period before hard-lock (when server unreachable)
 
 // ── Your hosting URL — update the domain to match yours ──────────
 // Files should be uploaded to: public_html/license-api/
@@ -53,20 +52,28 @@ export function LicenseProvider({ children }) {
       }
 
       // Check existing license
-      const storedKey  = await AsyncStorage.getItem(K.LICENSE_KEY);
+      const storedKey   = await AsyncStorage.getItem(K.LICENSE_KEY);
       const validatedAt = await AsyncStorage.getItem(K.VALIDATED_AT);
 
       if (storedKey && validatedAt) {
         const daysSince = (Date.now() - new Date(validatedAt).getTime()) / 86_400_000;
-        if (daysSince < RECHECK_DAYS) {
-          setStatus('active'); return;
-        }
-        // Time to re-check online
+
+        // Always try to validate online on every launch
         const result = await callValidateAPI(storedKey, did);
+
         if (result.ok) {
           setStatus('active'); return;
         }
-        // Offline / server unreachable → grace period
+
+        if (!result.offline) {
+          // Server responded and explicitly rejected the key (deactivated / deleted)
+          // Clear stored key so re-activation is required
+          await AsyncStorage.removeItem(K.LICENSE_KEY);
+          await AsyncStorage.removeItem(K.VALIDATED_AT);
+          setStatus('expired'); return;
+        }
+
+        // Server unreachable (offline) → grace period based on last successful validation
         if (daysSince < GRACE_DAYS) {
           setStatus('active'); return;
         }
@@ -74,8 +81,8 @@ export function LicenseProvider({ children }) {
       }
 
       // No license → trial countdown
-      const daysPassed  = (Date.now() - new Date(installDate).getTime()) / 86_400_000;
-      const remaining   = Math.ceil(TRIAL_DAYS - daysPassed);
+      const daysPassed = (Date.now() - new Date(installDate).getTime()) / 86_400_000;
+      const remaining  = Math.ceil(TRIAL_DAYS - daysPassed);
       if (remaining > 0) {
         setDaysLeft(remaining);
         setStatus('trial');
@@ -87,6 +94,10 @@ export function LicenseProvider({ children }) {
     }
   }
 
+  // Returns { ok, offline, msg }
+  // ok=true              → server confirmed valid
+  // ok=false, offline=false → server explicitly rejected (deactivated/deleted/invalid)
+  // ok=false, offline=true  → couldn't reach server (network error / timeout)
   async function callValidateAPI(key, did) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 10000);
@@ -101,17 +112,17 @@ export function LicenseProvider({ children }) {
       const text = await res.text();
       let json;
       try { json = JSON.parse(text); } catch {
-        return { ok: false, msg: `Server error (${res.status})` };
+        return { ok: false, offline: false, msg: `Server error (${res.status})` };
       }
       if (json.valid) {
         await AsyncStorage.setItem(K.VALIDATED_AT, new Date().toISOString());
-        return { ok: true };
+        return { ok: true, offline: false };
       }
-      return { ok: false, msg: json.message || 'Invalid key' };
+      return { ok: false, offline: false, msg: json.message || 'Invalid key' };
     } catch (e) {
       clearTimeout(timer);
-      if (e.name === 'AbortError') return { ok: false, msg: 'Request timed out. Check your internet.' };
-      return { ok: false, msg: 'Cannot connect to server. Check your internet.' };
+      if (e.name === 'AbortError') return { ok: false, offline: true, msg: 'Request timed out. Check your internet.' };
+      return { ok: false, offline: true, msg: 'Cannot connect to server. Check your internet.' };
     }
   }
 
