@@ -130,7 +130,7 @@ export function LicenseProvider({ children }) {
   }
 
   return (
-    <LicenseCtx.Provider value={{ status, daysLeft, activate, activating, error, deviceId }}>
+    <LicenseCtx.Provider value={{ status, daysLeft, activate, activating, error, deviceId, isPro: status === 'active' }}>
       {children}
     </LicenseCtx.Provider>
   );

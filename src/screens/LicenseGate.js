@@ -114,6 +114,36 @@ function PurchaseModal({ visible, onClose }) {
   );
 }
 
+// ── Trial limit modal (shown when trial user tries to add 2nd item) ──
+export function TrialLimitModal({ visible, onClose, itemKey }) {
+  const { t } = useI18n();
+  const [showPurchase, setShowPurchase] = useState(false);
+  const itemName = t(`license.limit${itemKey}`);
+  return (
+    <>
+      <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
+        <View style={lim.overlay}>
+          <View style={lim.card}>
+            <Text style={lim.lockIcon}>🔒</Text>
+            <Text style={lim.title}>{t('license.trialLimitTitle')}</Text>
+            <Text style={lim.msg}>{t('license.trialLimitMsg', { item: itemName })}</Text>
+            <TouchableOpacity
+              style={lim.upgradeBtn}
+              onPress={() => { onClose(); setTimeout(() => setShowPurchase(true), 300); }}
+            >
+              <Text style={lim.upgradeBtnText}>{t('license.upgradeNow')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={onClose} style={lim.cancelBtn}>
+              <Text style={lim.cancelBtnText}>{t('common.cancel')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+      <PurchaseModal visible={showPurchase} onClose={() => setShowPurchase(false)} />
+    </>
+  );
+}
+
 // ── Trial banner shown at top of app ─────────────────────────────
 export function TrialBanner() {
   const { daysLeft } = useLicense();
@@ -350,4 +380,19 @@ const pm = StyleSheet.create({
   },
   activateBtnDisabled: { opacity: 0.45 },
   activateBtnText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
+});
+
+const lim = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', alignItems: 'center', padding: 32 },
+  card: {
+    width: '100%', backgroundColor: '#FFF', borderRadius: 24, padding: 28, alignItems: 'center',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 20, elevation: 12,
+  },
+  lockIcon:    { fontSize: 48, marginBottom: 12 },
+  title:       { fontSize: 18, fontWeight: '800', color: COLORS.text, marginBottom: 10, textAlign: 'center' },
+  msg:         { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 22, marginBottom: 24 },
+  upgradeBtn:  { width: '100%', backgroundColor: COLORS.primary, borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginBottom: 10 },
+  upgradeBtnText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
+  cancelBtn:   { paddingVertical: 8 },
+  cancelBtnText: { fontSize: 14, color: COLORS.textSecondary },
 });
