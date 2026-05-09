@@ -22,6 +22,8 @@ import {
   Divider,
 } from '../components';
 import { useI18n } from '../i18n';
+import { useLicense } from '../context/LicenseContext';
+import { TrialLimitModal } from './LicenseGate';
 
 const DISH_CATEGORIES = ['Appetizer', 'Main Course', 'Side Dish', 'Pasta & Rice', 'Soup', 'Dessert', 'Beverage', 'Other'];
 const ING_CATEGORY_ICONS = {
@@ -43,6 +45,8 @@ export default function DishesScreen({ navigation }) {
   const { state, dispatch } = useApp();
   const { t, formatCurrency, config } = useI18n();
   const { dishes, ingredients, employees, stockRecipes = [] } = state;
+  const { isPro } = useLicense();
+  const [showLimit, setShowLimit] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [step, setStep] = useState(1); // 1: basic info, 2: ingredients, 3: labor
   const [editing, setEditing] = useState(null);
@@ -73,6 +77,7 @@ export default function DishesScreen({ navigation }) {
   );
 
   function openAdd() {
+    if (!isPro && dishes.length >= 1) { setShowLimit(true); return; }
     setEditing(null);
     setForm({
       name: '',
@@ -643,6 +648,7 @@ export default function DishesScreen({ navigation }) {
           </View>
         </View>
       </Modal>
+      <TrialLimitModal visible={showLimit} onClose={() => setShowLimit(false)} itemKey="Dish" />
     </SafeAreaView>
   );
 }
