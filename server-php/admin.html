@@ -353,17 +353,32 @@ async function addKey() {
   }
 }
 
+// ── Shared fetch helper ───────────────────────────────────────────
+async function adminPost(endpoint, body) {
+  try {
+    const res = await fetch(`${API_BASE}/${endpoint}`, {
+      method: 'POST',
+      headers: { 'X-Admin-Secret': ADMIN_SECRET, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); }
+    catch { toast(`❌ Server error (HTTP ${res.status}): ${text.slice(0, 120)}`); return null; }
+    return data;
+  } catch (e) {
+    toast(`❌ Network error: ${e.message}`);
+    return null;
+  }
+}
+
 // ── Manage key ───────────────────────────────────────────────────
 async function manageKey(key, action) {
   const labels = { deactivate:'Deactivate', activate:'Activate', 'reset-devices':'Reset devices for' };
   if (!confirm(`${labels[action]} key ${key}?`)) return;
 
-  const res = await fetch(`${API_BASE}/admin-manage.php`, {
-    method: 'POST',
-    headers: { 'X-Admin-Secret': ADMIN_SECRET, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ key, action }),
-  });
-  const data = await res.json();
+  const data = await adminPost('admin-manage.php', { key, action });
+  if (!data) return;
   if (data.success) {
     toast(`✅ ${data.message}`);
     loadKeys();
@@ -377,12 +392,8 @@ async function deleteKey(key) {
   if (!confirm(`⚠️ Permanently DELETE key ${key}?\n\nThis will:\n• Remove the key from the database\n• Revoke all device activations\n• Lock out the customer immediately\n\nThis cannot be undone!`)) return;
   if (!confirm(`Are you absolutely sure you want to delete ${key}?`)) return;
 
-  const res = await fetch(`${API_BASE}/admin-manage.php`, {
-    method: 'POST',
-    headers: { 'X-Admin-Secret': ADMIN_SECRET, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ key, action: 'delete' }),
-  });
-  const data = await res.json();
+  const data = await adminPost('admin-manage.php', { key, action: 'delete' });
+  if (!data) return;
   if (data.success) {
     toast(`🗑️ Key ${key} permanently deleted`);
     loadKeys();
@@ -417,10 +428,13 @@ function toast(msg) {
 
 // ── Orders ────────────────────────────────────────────────────────
 async function loadOrders() {
-  const res = await fetch(`${API_BASE}/admin-orders.php`, {
-    headers: { 'X-Admin-Secret': ADMIN_SECRET }
-  });
-  allOrders = await res.json();
+  try {
+    const res = await fetch(`${API_BASE}/admin-orders.php`, {
+      headers: { 'X-Admin-Secret': ADMIN_SECRET }
+    });
+    const text = await res.text();
+    try { allOrders = JSON.parse(text); } catch { allOrders = []; }
+  } catch (e) { allOrders = []; }
   renderOrders();
   // Badge count for pending+paid
   const pending = allOrders.filter(o => o.status === 'pending' || o.status === 'paid').length;
@@ -474,24 +488,16 @@ function renderOrders() {
 }
 
 async function markPaid(id) {
-  const res  = await fetch(`${API_BASE}/admin-orders.php`, {
-    method: 'POST',
-    headers: { 'X-Admin-Secret': ADMIN_SECRET, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id, action: 'mark-paid' }),
-  });
-  const data = await res.json();
+  const data = await adminPost('admin-orders.php', { id, action: 'mark-paid' });
+  if (!data) return;
   if (data.success) { toast('✅ Marked as paid'); loadOrders(); }
   else toast('❌ ' + data.error);
 }
 
 async function cancelOrder(id) {
   if (!confirm('Cancel this order?')) return;
-  const res  = await fetch(`${API_BASE}/admin-orders.php`, {
-    method: 'POST',
-    headers: { 'X-Admin-Secret': ADMIN_SECRET, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id, action: 'cancel' }),
-  });
-  const data = await res.json();
+  const data = await adminPost('admin-orders.php', { id, action: 'cancel' });
+  if (!data) return;
   if (data.success) { toast('✅ Order cancelled'); loadOrders(); }
   else toast('❌ ' + data.error);
 }
