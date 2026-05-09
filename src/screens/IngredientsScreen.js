@@ -33,6 +33,8 @@ import {
   Divider,
 } from '../components';
 import { useI18n } from '../i18n';
+import { useLicense } from '../context/LicenseContext';
+import { TrialLimitModal } from './LicenseGate';
 
 const CATEGORIES = ['Meat', 'Seafood', 'Produce', 'Starch', 'Spices', 'Dairy & Eggs', 'Beverages', 'Other'];
 
@@ -109,6 +111,8 @@ function IngredientsTab({ ingredients, employees, dispatch, t, formatCurrency, c
     return map[cat] || cat;
   };
 
+  const { isPro } = useLicense();
+  const [showLimit, setShowLimit] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editing, setEditing] = useState(null);
   const [search, setSearch] = useState('');
@@ -130,6 +134,7 @@ function IngredientsTab({ ingredients, employees, dispatch, t, formatCurrency, c
   }, [ingredients, search, selectedCategory]);
 
   function openAdd() {
+    if (!isPro && ingredients.length >= 1) { setShowLimit(true); return; }
     setEditing(null);
     setForm({ name: '', unit: UNITS[0] || 'lb', pricePerUnit: '', category: 'Other', unitsPerBox: '', subUnit: SUB_UNITS[0] || 'lb', prepTimePerUnit: '' });
     setErrors({});
@@ -307,6 +312,7 @@ function IngredientsTab({ ingredients, employees, dispatch, t, formatCurrency, c
         <View style={{ height: 20 }} />
       </ScrollView>
 
+      <TrialLimitModal visible={showLimit} onClose={() => setShowLimit(false)} itemKey="Ingredient" />
       <Modal visible={modalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <ScrollView>
