@@ -18,6 +18,7 @@ import IngredientsScreen from './src/screens/IngredientsScreen';
 import OverheadScreen from './src/screens/OverheadScreen';
 import DishesScreen from './src/screens/DishesScreen';
 import CalculatorScreen from './src/screens/CalculatorScreen';
+import QuickCostScreen from './src/screens/QuickCostScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -79,6 +80,17 @@ function RootNavigator() {
           headerShown: true,
           title: 'Menu Pricing',
           headerStyle: { backgroundColor: COLORS.primary },
+          headerTintColor: '#FFF',
+          headerTitleStyle: { fontWeight: '700' },
+        }}
+      />
+      <Stack.Screen
+        name="QuickCost"
+        component={QuickCostScreen}
+        options={{
+          headerShown: true,
+          title: '⚡ Quick Cost',
+          headerStyle: { backgroundColor: '#2E7D32' },
           headerTintColor: '#FFF',
           headerTitleStyle: { fontWeight: '700' },
         }}

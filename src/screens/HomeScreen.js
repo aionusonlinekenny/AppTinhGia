@@ -140,6 +140,22 @@ export default function HomeScreen({ navigation }) {
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+        {/* Quick Cost banner */}
+        <TouchableOpacity
+          style={styles.quickCostBanner}
+          onPress={() => navigation.navigate('QuickCost')}
+          activeOpacity={0.88}
+        >
+          <View style={styles.quickCostLeft}>
+            <Text style={styles.quickCostIcon}>⚡</Text>
+            <View>
+              <Text style={styles.quickCostTitle}>{t('quickCost.homeBtn')}</Text>
+              <Text style={styles.quickCostSub}>{t('quickCost.homeBtnSub')}</Text>
+            </View>
+          </View>
+          <Text style={styles.quickCostArrow}>›</Text>
+        </TouchableOpacity>
+
         {/* Quick actions */}
         <Text style={styles.sectionTitle}>{t('home.quickAccess')}</Text>
         <View style={styles.quickGrid}>
@@ -442,6 +458,18 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { padding: 16 },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: COLORS.text, marginBottom: 12, marginTop: 8 },
+
+  quickCostBanner: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: '#2E7D32', borderRadius: 16, padding: 16, marginBottom: 14,
+    shadowColor: '#2E7D32', shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.35, shadowRadius: 8, elevation: 5,
+  },
+  quickCostLeft:  { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  quickCostIcon:  { fontSize: 32 },
+  quickCostTitle: { fontSize: 16, fontWeight: '800', color: '#FFF' },
+  quickCostSub:   { fontSize: 11, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
+  quickCostArrow: { fontSize: 28, color: 'rgba(255,255,255,0.6)', fontWeight: '300' },
 
   quickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 8 },
   quickCard: { width: '47%', borderRadius: 14, padding: 16, alignItems: 'center' },
