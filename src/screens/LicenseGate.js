@@ -3,7 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity, Modal,
   StyleSheet, ActivityIndicator, ScrollView, Linking,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLicense } from '../context/LicenseContext';
 import { COLORS } from '../components';
 import { useI18n } from '../i18n';
@@ -120,10 +120,11 @@ export function TrialBanner() {
   const { t } = useI18n();
   const [dismissed, setDismissed] = useState(false);
   const [showPurchase, setShowPurchase] = useState(false);
+  const insets = useSafeAreaInsets();
   if (dismissed) return null;
   return (
     <>
-      <TouchableOpacity style={styles.banner} onPress={() => setShowPurchase(true)} activeOpacity={0.85}>
+      <TouchableOpacity style={[styles.banner, { paddingTop: insets.top + 9 }]} onPress={() => setShowPurchase(true)} activeOpacity={0.85}>
         <Text style={styles.bannerText}>
           {daysLeft === 1
             ? t('license.trialBanner', { daysLeft })
