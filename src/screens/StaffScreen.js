@@ -29,7 +29,7 @@ const TABS     = ['Payroll', 'Employees'];
 const DAYS     = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const DEF_SCHED = Object.fromEntries(DAYS.map(d => [d, null]));
 
-const GROUP_COLOR = { kitchen: '#FF8A65', waiter: '#42A5F5' };
+const GROUP_COLOR = { kitchen: '#FF8A65', waiter: '#42A5F5', prep: '#66BB6A' };
 
 function calcMainPay(hours, rate, cash)    { return (Number(hours)||0) * (Number(rate)||0) + (Number(cash)||0); }
 function calcGrandTotal(main, check, tips) { return main + (Number(check)||0) + (Number(tips)||0); }
@@ -322,6 +322,7 @@ function PayrollTab({ employees, payrollEntries, salesRecords, dispatch }) {
   const previewGrand= calcGrandTotal(previewMain, form.extraCheck, form.tips);
   const kitchen     = employees.filter(e=>e.group==='kitchen');
   const waiters     = employees.filter(e=>e.group==='waiter');
+  const prep        = employees.filter(e=>e.group==='prep');
 
   return (
     <View style={{flex:1}}>
@@ -429,6 +430,14 @@ function PayrollTab({ employees, payrollEntries, salesRecords, dispatch }) {
                   </TouchableOpacity>
                 ))}
               </ScrollView>
+              <Text style={[styles.pickLbl,{marginTop:4}]}>{t('staff.prepGroup')}</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginBottom:8}}>
+                {prep.map(emp=>(
+                  <TouchableOpacity key={emp.id} style={[styles.empChip,{borderColor:'#66BB6A'},form.employeeId===emp.id&&styles.empChipOn]} onPress={()=>pickEmployee(emp.id)}>
+                    <Text style={[styles.empChipTxt,form.employeeId===emp.id&&styles.empChipTxtOn]}>{emp.name.split(' ')[0]}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
               {errors.employeeId&&<Text style={styles.errTxt}>{errors.employeeId}</Text>}
 
               <View style={styles.row2}>
@@ -476,10 +485,11 @@ function EmployeesTab({ employees, dispatch }) {
   const [form, setForm] = useState({ name:'', hourlyRate:'', group:'kitchen', tipEligible:false, schedule:{...DEF_SCHED} });
   const [errors, setErrors] = useState({});
 
-  const GROUP_LABEL = { kitchen: t('staff.kitchenGroup'), waiter: t('staff.waiterGroup') };
+  const GROUP_LABEL = { kitchen: t('staff.kitchenGroup'), waiter: t('staff.waiterGroup'), prep: t('staff.prepGroup') };
 
   const kitchen = employees.filter(e=>e.group==='kitchen');
   const waiters  = employees.filter(e=>e.group==='waiter');
+  const prep     = employees.filter(e=>e.group==='prep');
 
   function openAdd() {
     setEditing(null);
@@ -591,10 +601,19 @@ function EmployeesTab({ employees, dispatch }) {
             </Text>
             <Text style={styles.rateInfoSub}>{t('staff.weightedAvg')}</Text>
           </View>
+          <View style={[styles.rateInfoCard,{borderColor:'#66BB6A'}]}>
+            <Text style={styles.rateInfoLbl}>{t('staff.prepRateMin')}</Text>
+            <Text style={[styles.rateInfoVal,{color:'#2E7D32'}]}>
+              {formatCurrency(calcGroupWeightedRate(employees,'prep')/60)}
+            </Text>
+            <Text style={styles.rateInfoSub}>{t('staff.weightedAvg')}</Text>
+          </View>
         </View>
         {renderGroup(t('staff.kitchenGroup'), kitchen, '#FF8A65')}
         <View style={{height:16}}/>
         {renderGroup(t('staff.waiterGroup'), waiters, '#42A5F5')}
+        <View style={{height:16}}/>
+        {renderGroup(t('staff.prepGroup'), prep, '#66BB6A')}
       </ScrollView>
 
       <Modal visible={modalVisible} animationType="slide" transparent>
@@ -606,7 +625,7 @@ function EmployeesTab({ employees, dispatch }) {
               {/* Group toggle */}
               <Text style={styles.pickLbl}>{t('staff.role')}</Text>
               <View style={styles.groupToggle}>
-                {['kitchen','waiter'].map(g=>(
+                {['kitchen', 'prep', 'waiter'].map(g=>(
                   <TouchableOpacity key={g} style={[styles.groupBtn,form.group===g&&styles.groupBtnOn]} onPress={()=>setForm(f=>({...f,group:g}))}>
                     <Text style={[styles.groupBtnTxt,form.group===g&&styles.groupBtnTxtOn]}>{GROUP_LABEL[g]}</Text>
                   </TouchableOpacity>
