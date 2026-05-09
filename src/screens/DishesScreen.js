@@ -244,6 +244,12 @@ export default function DishesScreen({ navigation }) {
                     <Text style={styles.costLabel}>{t('dishes.ingredientsLabel')}</Text>
                     <Text style={styles.costVal}>{formatCurrency(cost.ingredientCost)}</Text>
                   </View>
+                  {cost.prepLaborCost > 0 && (
+                    <View style={styles.costItem}>
+                      <Text style={[styles.costLabel, { color: '#66BB6A' }]}>{t('dishes.prepLaborLabel')}</Text>
+                      <Text style={[styles.costVal, { color: '#66BB6A' }]}>{formatCurrency(cost.prepLaborCost)}</Text>
+                    </View>
+                  )}
                   <View style={styles.costItem}>
                     <Text style={styles.costLabel}>{t('dishes.laborLabel')}</Text>
                     <Text style={styles.costVal}>{formatCurrency(cost.laborCost)}</Text>
@@ -589,6 +595,12 @@ export default function DishesScreen({ navigation }) {
                     <Text style={styles.cpLabel}>{t('dishes.ingredientsCost')}</Text>
                     <Text style={styles.cpVal}>{formatCurrency(previewCost.ingredientCost)}</Text>
                   </View>
+                  {previewCost.prepLaborCost > 0 && (
+                    <View style={styles.cpItem}>
+                      <Text style={[styles.cpLabel, { color: '#66BB6A' }]}>{t('dishes.prepLaborCost')}</Text>
+                      <Text style={[styles.cpVal, { color: '#66BB6A' }]}>{formatCurrency(previewCost.prepLaborCost)}</Text>
+                    </View>
+                  )}
                   <View style={styles.cpItem}>
                     <Text style={styles.cpLabel}>{t('dishes.laborCost')}</Text>
                     <Text style={styles.cpVal}>{formatCurrency(previewCost.laborCost)}</Text>

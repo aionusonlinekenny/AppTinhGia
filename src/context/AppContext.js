@@ -311,6 +311,13 @@ export function getIngredientPricePerDishUnit(ing) {
   return price;
 }
 
+// Prep labor cost per dish unit for an ingredient (reuses same unit math as purchase price)
+export function getIngredientPrepCostPerDishUnit(ing, prepRatePerHour) {
+  if (!ing?.prepTimePerUnit || !(prepRatePerHour > 0)) return 0;
+  const prepCostPerPurchaseUnit = (prepRatePerHour / 60) * ing.prepTimePerUnit;
+  return getIngredientPricePerDishUnit({ ...ing, pricePerUnit: prepCostPerPurchaseUnit });
+}
+
 // Cost per oz for a batch stock/broth recipe
 export function calculateStockCostPerOz(stock, state) {
   if (!stock || !(stock.yieldOz > 0)) return 0;
@@ -334,14 +341,21 @@ export function calculateStockCostPerOz(stock, state) {
 export function calculateDishCost(dish, state) {
   const { ingredients, employees = [], departments = [], overheadCosts, settings, stockRecipes = [] } = state;
 
+  const prepRate = calcGroupWeightedRate(employees, 'prep');
+
   let ingredientCost = 0;
+  let prepLaborCost  = 0;
   for (const item of dish.ingredients || []) {
     if (item.type === 'stock') {
       const stock = stockRecipes.find(s => s.id === item.ingredientId);
       if (stock) ingredientCost += calculateStockCostPerOz(stock, state) * (parseFloat(item.quantity) || 0);
     } else {
       const ing = ingredients.find(i => i.id === item.ingredientId);
-      if (ing) ingredientCost += getIngredientPricePerDishUnit(ing) * (parseFloat(item.quantity) || 0);
+      if (ing) {
+        const qty = parseFloat(item.quantity) || 0;
+        ingredientCost += getIngredientPricePerDishUnit(ing) * qty;
+        prepLaborCost  += getIngredientPrepCostPerDishUnit(ing, prepRate) * qty;
+      }
     }
   }
 
@@ -360,7 +374,8 @@ export function calculateDishCost(dish, state) {
   const totalDishesPerMonth  = settings.workingDaysPerMonth * settings.totalDishesPerDay;
   const overheadPerDish      = totalDishesPerMonth > 0 ? totalMonthlyOverhead / totalDishesPerMonth : 0;
 
-  return { ingredientCost, laborCost, overheadPerDish, totalCost: ingredientCost + laborCost + overheadPerDish };
+  const totalCost = ingredientCost + prepLaborCost + laborCost + overheadPerDish;
+  return { ingredientCost, prepLaborCost, laborCost, overheadPerDish, totalCost };
 }
 
 export function suggestPrices(totalCost) {

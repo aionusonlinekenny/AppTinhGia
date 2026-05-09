@@ -54,7 +54,8 @@ export default function CalculatorScreen({ route }) {
       '',
       '─── COST BREAKDOWN ───',
       `🥕 Ingredients:  ${formatCurrency(cost.ingredientCost)}`,
-      `👤 Labor:        ${formatCurrency(cost.laborCost)}`,
+      ...(cost.prepLaborCost > 0 ? [`🥦 Prep Labor:   ${formatCurrency(cost.prepLaborCost)}`] : []),
+      `👨‍🍳 Cook Labor:  ${formatCurrency(cost.laborCost)}`,
       `⚡ Overhead:     ${formatCurrency(cost.overheadPerDish)}`,
       `💰 Total Cost:   ${formatCurrency(cost.totalCost)}`,
       '',
@@ -148,6 +149,20 @@ export default function CalculatorScreen({ route }) {
                   </Text>
                 </View>
               </View>
+
+              {cost.prepLaborCost > 0 && (
+                <View style={styles.costRow}>
+                  <View style={[styles.costBar, { backgroundColor: '#C8E6C9' }]}>
+                    <Text style={styles.costBarLabel}>{t('calculator.prepLaborLabel')}</Text>
+                    <Text style={styles.costBarValue}>{formatCurrency(cost.prepLaborCost)}</Text>
+                    <Text style={styles.costBarPct}>
+                      {cost.totalCost > 0
+                        ? ((cost.prepLaborCost / cost.totalCost) * 100).toFixed(0)
+                        : 0}%
+                    </Text>
+                  </View>
+                </View>
+              )}
 
               <View style={styles.costRow}>
                 <View style={[styles.costBar, { backgroundColor: '#82B1FF' }]}>
