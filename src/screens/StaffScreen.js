@@ -24,6 +24,8 @@ import {
 } from '../context/AppContext';
 import { COLORS, Header, Card, Button, Input, SectionTitle, EmptyState, Divider } from '../components';
 import { useI18n } from '../i18n';
+import { useLicense } from '../context/LicenseContext';
+import { TrialLimitModal } from './LicenseGate';
 
 const TABS     = ['Payroll', 'Employees'];
 const DAYS     = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -480,6 +482,8 @@ function PayrollTab({ employees, payrollEntries, salesRecords, dispatch }) {
 // ── EMPLOYEES TAB ─────────────────────────────────────────────────
 function EmployeesTab({ employees, dispatch }) {
   const { t, formatCurrency } = useI18n();
+  const { isPro } = useLicense();
+  const [showLimit, setShowLimit] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ name:'', hourlyRate:'', group:'kitchen', tipEligible:false, schedule:{...DEF_SCHED} });
@@ -492,6 +496,7 @@ function EmployeesTab({ employees, dispatch }) {
   const prep     = employees.filter(e=>e.group==='prep');
 
   function openAdd() {
+    if (!isPro && employees.length >= 1) { setShowLimit(true); return; }
     setEditing(null);
     setForm({ name:'', hourlyRate:'', group:'kitchen', tipEligible:false, schedule:{...DEF_SCHED} });
     setErrors({});
@@ -664,6 +669,7 @@ function EmployeesTab({ employees, dispatch }) {
           </ScrollView>
         </View>
       </Modal>
+      <TrialLimitModal visible={showLimit} onClose={() => setShowLimit(false)} itemKey="Employee" />
     </View>
   );
 }
