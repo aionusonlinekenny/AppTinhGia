@@ -18,6 +18,7 @@ import {
   formatWeekRange,
   getIngredientPricePerDishUnit,
   getIngredientDishUnit,
+  getIngredientPrepCostPerDishUnit,
   calculateStockCostPerOz,
   calcGroupWeightedRate,
 } from '../context/AppContext';
@@ -75,7 +76,7 @@ export default function IngredientsScreen() {
       </View>
 
       {activeTab === 0 && (
-        <IngredientsTab ingredients={ingredients} dispatch={dispatch} t={t} formatCurrency={formatCurrency} config={config} />
+        <IngredientsTab ingredients={ingredients} employees={employees} dispatch={dispatch} t={t} formatCurrency={formatCurrency} config={config} />
       )}
       {activeTab === 1 && (
         <StocksTab stockRecipes={stockRecipes} ingredients={ingredients} employees={employees} dispatch={dispatch} t={t} formatCurrency={formatCurrency} config={config} />
@@ -90,11 +91,13 @@ export default function IngredientsScreen() {
 // ────────────────────────────────────────────────────────────────
 // INGREDIENTS TAB
 // ────────────────────────────────────────────────────────────────
-function IngredientsTab({ ingredients, dispatch, t, formatCurrency, config }) {
+function IngredientsTab({ ingredients, employees, dispatch, t, formatCurrency, config }) {
   const UNITS     = config.units;
   const SUB_UNITS = config.subUnits;
   const BOX_UNITS = config.boxUnits;
   function isBoxUnit(unit) { return BOX_UNITS.includes((unit || '').toLowerCase()); }
+
+  const prepRate = calcGroupWeightedRate(employees || [], 'prep');
 
   const catLabel = (cat) => {
     const map = {
@@ -110,7 +113,7 @@ function IngredientsTab({ ingredients, dispatch, t, formatCurrency, config }) {
   const [editing, setEditing] = useState(null);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [form, setForm] = useState({ name: '', unit: UNITS[0] || 'lb', pricePerUnit: '', category: 'Other', unitsPerBox: '', subUnit: SUB_UNITS[0] || 'lb' });
+  const [form, setForm] = useState({ name: '', unit: UNITS[0] || 'lb', pricePerUnit: '', category: 'Other', unitsPerBox: '', subUnit: SUB_UNITS[0] || 'lb', prepTimePerUnit: '' });
   const [showUnitPicker, setShowUnitPicker] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [showSubUnitPicker, setShowSubUnitPicker] = useState(false);
@@ -128,7 +131,7 @@ function IngredientsTab({ ingredients, dispatch, t, formatCurrency, config }) {
 
   function openAdd() {
     setEditing(null);
-    setForm({ name: '', unit: UNITS[0] || 'lb', pricePerUnit: '', category: 'Other', unitsPerBox: '', subUnit: SUB_UNITS[0] || 'lb' });
+    setForm({ name: '', unit: UNITS[0] || 'lb', pricePerUnit: '', category: 'Other', unitsPerBox: '', subUnit: SUB_UNITS[0] || 'lb', prepTimePerUnit: '' });
     setErrors({});
     setModalVisible(true);
   }
@@ -142,6 +145,7 @@ function IngredientsTab({ ingredients, dispatch, t, formatCurrency, config }) {
       category: ing.category,
       unitsPerBox: ing.unitsPerBox ? String(ing.unitsPerBox) : '',
       subUnit: ing.subUnit || SUB_UNITS[0] || 'lb',
+      prepTimePerUnit: ing.prepTimePerUnit ? String(ing.prepTimePerUnit) : '',
     });
     setErrors({});
     setModalVisible(true);
@@ -166,6 +170,7 @@ function IngredientsTab({ ingredients, dispatch, t, formatCurrency, config }) {
       unit: form.unit,
       pricePerUnit: Number(form.pricePerUnit),
       category: form.category,
+      prepTimePerUnit: form.prepTimePerUnit ? Number(form.prepTimePerUnit) : 0,
       ...(isBoxUnit(form.unit) ? {
         unitsPerBox: Number(form.unitsPerBox),
         subUnit: form.subUnit,
@@ -200,6 +205,8 @@ function IngredientsTab({ ingredients, dispatch, t, formatCurrency, config }) {
     const isBox = isBoxUnit(ing.unit);
     const dishUnit = getIngredientDishUnit(ing);
     const pricePerDishUnit = getIngredientPricePerDishUnit(ing);
+    const prepCostPerDishUnit = getIngredientPrepCostPerDishUnit(ing, prepRate);
+    const hasPrepCost = prepCostPerDishUnit > 0;
     return (
       <View key={ing.id} style={styles.ingRow}>
         <Text style={styles.ingIcon}>{CATEGORY_ICONS[ing.category] || '📦'}</Text>
@@ -209,10 +216,24 @@ function IngredientsTab({ ingredients, dispatch, t, formatCurrency, config }) {
             {formatCurrency(ing.pricePerUnit)} / {ing.unit}
             {isBox && ing.unitsPerBox ? ` · ${ing.unitsPerBox} ${ing.subUnit || SUB_UNITS[0] || 'lb'}` : ''}
           </Text>
-          {isBox && ing.unitsPerBox ? (
-            <Text style={styles.ingSubPrice}>
-              → {formatCurrency(pricePerDishUnit)}/{dishUnit}
-            </Text>
+          {(isBox && ing.unitsPerBox) || hasPrepCost ? (
+            <View>
+              {isBox && ing.unitsPerBox ? (
+                <Text style={styles.ingSubPrice}>
+                  {t('ingredients.price')}: {formatCurrency(pricePerDishUnit)}/{dishUnit}
+                </Text>
+              ) : null}
+              {hasPrepCost ? (
+                <Text style={[styles.ingSubPrice, { color: '#66BB6A' }]}>
+                  🔪 {t('ingredients.prepCost')}: +{formatCurrency(prepCostPerDishUnit)}/{dishUnit}
+                </Text>
+              ) : null}
+              {hasPrepCost ? (
+                <Text style={[styles.ingSubPrice, { fontWeight: '700', color: COLORS.text }]}>
+                  {t('ingredients.totalEffective')}: {formatCurrency(pricePerDishUnit + prepCostPerDishUnit)}/{dishUnit}
+                </Text>
+              ) : null}
+            </View>
           ) : null}
         </View>
         <View style={styles.ingActions}>
@@ -390,6 +411,22 @@ function IngredientsTab({ ingredients, dispatch, t, formatCurrency, config }) {
                   )}
                 </View>
               )}
+
+              {/* Prep time section */}
+              <View style={styles.boxSection}>
+                <Text style={styles.boxSectionTitle}>{t('ingredients.prepSection')}</Text>
+                <Input
+                  label={t('ingredients.prepTime', { unit: form.unit })}
+                  value={form.prepTimePerUnit}
+                  onChangeText={v => setForm(f => ({ ...f, prepTimePerUnit: v }))}
+                  placeholder={t('ingredients.prepTimePlaceholder')}
+                  keyboardType="numeric"
+                  right="min"
+                />
+                <Text style={{ fontSize: 11, color: COLORS.textSecondary, marginTop: -8, marginBottom: 8 }}>
+                  {t('ingredients.prepTimeNote', { unit: form.unit })}
+                </Text>
+              </View>
 
               <Text style={[styles.pickLabel, { marginTop: 12 }]}>{t('ingredients.category')}</Text>
               <TouchableOpacity
