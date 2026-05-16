@@ -8,6 +8,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
   useApp,
   calculateDishCost,
@@ -17,7 +18,7 @@ import {
   offsetWeek,
   formatWeekRange,
 } from '../context/AppContext';
-import { COLORS, Card, Divider, Button, Input } from '../components';
+import { COLORS, GRADIENTS, Card, Divider, Button, Input } from '../components';
 import { useI18n } from '../i18n';
 import SettingsModal from './SettingsModal';
 
@@ -114,7 +115,7 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
-      <View style={styles.headerBg}>
+      <LinearGradient colors={GRADIENTS.header} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.headerBg}>
         <View style={styles.headerContent}>
           <View>
             <Text style={styles.greeting}>Welcome! 👋</Text>
@@ -137,23 +138,24 @@ export default function HomeScreen({ navigation }) {
           <View style={styles.chip}><Text style={styles.chipValue}>{overheadCosts.length}</Text><Text style={styles.chipLabel}>{t('home.costs')}</Text></View>
           <View style={styles.chip}><Text style={styles.chipValue}>{salesRecords.length}</Text><Text style={styles.chipLabel}>{t('home.salesWeeks')}</Text></View>
         </ScrollView>
-      </View>
+      </LinearGradient>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Quick Cost banner */}
         <TouchableOpacity
-          style={styles.quickCostBanner}
           onPress={() => navigation.navigate('QuickCost')}
           activeOpacity={0.88}
         >
-          <View style={styles.quickCostLeft}>
-            <Text style={styles.quickCostIcon}>⚡</Text>
-            <View>
-              <Text style={styles.quickCostTitle}>{t('quickCost.homeBtn')}</Text>
-              <Text style={styles.quickCostSub}>{t('quickCost.homeBtnSub')}</Text>
+          <LinearGradient colors={GRADIENTS.quickCost} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.quickCostBanner}>
+            <View style={styles.quickCostLeft}>
+              <Text style={styles.quickCostIcon}>⚡</Text>
+              <View>
+                <Text style={styles.quickCostTitle}>{t('quickCost.homeBtn')}</Text>
+                <Text style={styles.quickCostSub}>{t('quickCost.homeBtnSub')}</Text>
+              </View>
             </View>
-          </View>
-          <Text style={styles.quickCostArrow}>›</Text>
+            <Text style={styles.quickCostArrow}>›</Text>
+          </LinearGradient>
         </TouchableOpacity>
 
         {/* Quick actions */}
@@ -219,8 +221,10 @@ export default function HomeScreen({ navigation }) {
               </View>
             </View>
             <View style={styles.salesActions}>
-              <TouchableOpacity onPress={openSalesModal} style={styles.salesEditBtn}>
-                <Text style={styles.salesEditText}>{t('home.editBtn')}</Text>
+              <TouchableOpacity onPress={openSalesModal}>
+                <LinearGradient colors={['#FFF3E0', '#FFE0B2']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.salesEditBtn}>
+                  <Text style={styles.salesEditText}>{t('home.editBtn')}</Text>
+                </LinearGradient>
               </TouchableOpacity>
               <TouchableOpacity onPress={handleDeleteSales} style={styles.salesDeleteBtn}>
                 <Text style={styles.salesDeleteText}>🗑️</Text>
@@ -440,7 +444,7 @@ export default function HomeScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
-  headerBg: { backgroundColor: COLORS.primary, paddingTop: 16, paddingBottom: 16 },
+  headerBg: { paddingTop: 16, paddingBottom: 16 },
   headerContent: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 16 },
   greeting: { fontSize: 14, color: 'rgba(255,255,255,0.8)' },
   appName: { fontSize: 26, fontWeight: '800', color: '#FFF', marginTop: 2 },
@@ -461,7 +465,7 @@ const styles = StyleSheet.create({
 
   quickCostBanner: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: '#2E7D32', borderRadius: 16, padding: 16, marginBottom: 14,
+    borderRadius: 16, padding: 16, marginBottom: 14,
     shadowColor: '#2E7D32', shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.35, shadowRadius: 8, elevation: 5,
   },
@@ -498,7 +502,7 @@ const styles = StyleSheet.create({
   tipsValue: { color: '#2E7D32' },
 
   salesActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: COLORS.border },
-  salesEditBtn: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 8, backgroundColor: COLORS.secondary },
+  salesEditBtn: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 8 },
   salesEditText: { fontSize: 13, color: COLORS.primary, fontWeight: '600' },
   salesDeleteBtn: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: '#FFEBEE' },
   salesDeleteText: { fontSize: 14 },
