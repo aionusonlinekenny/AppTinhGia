@@ -4,7 +4,8 @@ import {
   TextInput, StyleSheet, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS } from '../components';
+import { LinearGradient } from 'expo-linear-gradient';
+import { COLORS, GRADIENTS } from '../components';
 import { useI18n } from '../i18n';
 
 const MARGINS = [30, 40, 50, 60, 70];
@@ -210,7 +211,7 @@ export default function QuickCostScreen() {
 
           {/* ── RESULTS ───────────────────────────────────── */}
           {hasResult ? (
-            <View style={s.resultsCard}>
+            <LinearGradient colors={GRADIENTS.quickCost} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.resultsCard}>
               <Text style={s.resultsTitle}>💰 {t('quickCost.results')}</Text>
 
               <View style={s.breakdownRow}>
@@ -247,7 +248,7 @@ export default function QuickCostScreen() {
               </View>
 
               <Text style={s.disclaimer}>{t('quickCost.disclaimer')}</Text>
-            </View>
+            </LinearGradient>
           ) : (
             <View style={s.emptyResult}>
               <Text style={s.emptyResultText}>{t('quickCost.emptyHint')}</Text>
@@ -312,8 +313,8 @@ const s = StyleSheet.create({
   hint:       { fontSize: 12, color: COLORS.textSecondary, marginBottom: 8, lineHeight: 17 },
 
   resultsCard: {
-    backgroundColor: COLORS.primary, borderRadius: 20, padding: 20, marginBottom: 12,
-    shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 4 },
+    borderRadius: 20, padding: 20, marginBottom: 12,
+    shadowColor: '#2E7D32', shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3, shadowRadius: 12, elevation: 6,
   },
   resultsTitle: { fontSize: 14, fontWeight: '800', color: 'rgba(255,255,255,0.85)', marginBottom: 14 },

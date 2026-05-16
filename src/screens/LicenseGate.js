@@ -4,8 +4,9 @@ import {
   StyleSheet, ActivityIndicator, ScrollView, Linking,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLicense } from '../context/LicenseContext';
-import { COLORS } from '../components';
+import { COLORS, GRADIENTS } from '../components';
 import { useI18n } from '../i18n';
 import { strings } from '../i18n/strings';
 
@@ -75,8 +76,10 @@ function PurchaseModal({ visible, onClose }) {
             {tab === 'buy' ? (
               <View style={pm.tabContent}>
                 <Text style={pm.buyInfo}>{t('license.buyInfo')}</Text>
-                <TouchableOpacity style={pm.buyBtn} onPress={handleBuyNow}>
-                  <Text style={pm.buyBtnText}>{t('license.buyNow')}</Text>
+                <TouchableOpacity onPress={handleBuyNow} activeOpacity={0.85} style={[pm.buyBtn, { padding: 0, overflow: 'hidden' }]}>
+                  <LinearGradient colors={GRADIENTS.primary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ padding: 16, alignItems: 'center', borderRadius: 12 }}>
+                    <Text style={pm.buyBtnText}>{t('license.buyNow')}</Text>
+                  </LinearGradient>
                 </TouchableOpacity>
                 <Text style={pm.deviceIdLabel}>{t('license.deviceIdLabel')}</Text>
                 <Text style={pm.deviceIdValue} selectable>{deviceId}</Text>
@@ -96,14 +99,16 @@ function PurchaseModal({ visible, onClose }) {
                 />
                 {error ? <Text style={pm.errorText}>{error}</Text> : null}
                 <TouchableOpacity
-                  style={[pm.activateBtn, (activating || key.replace(/-/g, '').length < 16) && pm.activateBtnDisabled]}
+                  style={[pm.activateBtn, { padding: 0, overflow: 'hidden' }, (activating || key.replace(/-/g, '').length < 16) && pm.activateBtnDisabled]}
                   onPress={() => activate(key)}
                   disabled={activating || key.replace(/-/g, '').length < 16}
                 >
-                  {activating
-                    ? <ActivityIndicator color="#FFF" />
-                    : <Text style={pm.activateBtnText}>{t('license.activate')}</Text>
-                  }
+                  <LinearGradient colors={GRADIENTS.primary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ paddingVertical: 14, alignItems: 'center', borderRadius: 12 }}>
+                    {activating
+                      ? <ActivityIndicator color="#FFF" />
+                      : <Text style={pm.activateBtnText}>{t('license.activate')}</Text>
+                    }
+                  </LinearGradient>
                 </TouchableOpacity>
               </View>
             )}
@@ -128,10 +133,12 @@ export function TrialLimitModal({ visible, onClose, itemKey }) {
             <Text style={lim.title}>{t('license.trialLimitTitle')}</Text>
             <Text style={lim.msg}>{t('license.trialLimitMsg', { item: itemName })}</Text>
             <TouchableOpacity
-              style={lim.upgradeBtn}
+              style={[lim.upgradeBtn, { padding: 0, overflow: 'hidden' }]}
               onPress={() => { onClose(); setTimeout(() => setShowPurchase(true), 300); }}
             >
-              <Text style={lim.upgradeBtnText}>{t('license.upgradeNow')}</Text>
+              <LinearGradient colors={GRADIENTS.primary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ width: '100%', paddingVertical: 14, alignItems: 'center', borderRadius: 14 }}>
+                <Text style={lim.upgradeBtnText}>{t('license.upgradeNow')}</Text>
+              </LinearGradient>
             </TouchableOpacity>
             <TouchableOpacity onPress={onClose} style={lim.cancelBtn}>
               <Text style={lim.cancelBtnText}>{t('common.cancel')}</Text>
@@ -154,16 +161,18 @@ export function TrialBanner() {
   if (dismissed) return null;
   return (
     <>
-      <TouchableOpacity style={[styles.banner, { paddingTop: insets.top + 9 }]} onPress={() => setShowPurchase(true)} activeOpacity={0.85}>
-        <Text style={styles.bannerText}>
-          {daysLeft === 1
-            ? t('license.trialBanner', { daysLeft })
-            : t('license.trialBannerPlural', { daysLeft })
-          }
-        </Text>
-        <TouchableOpacity onPress={() => setDismissed(true)} style={styles.bannerClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Text style={styles.bannerCloseText}>✕</Text>
-        </TouchableOpacity>
+      <TouchableOpacity onPress={() => setShowPurchase(true)} activeOpacity={0.85}>
+        <LinearGradient colors={['#FFA726', '#E65100']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.banner, { paddingTop: insets.top + 9 }]}>
+          <Text style={styles.bannerText}>
+            {daysLeft === 1
+              ? t('license.trialBanner', { daysLeft })
+              : t('license.trialBannerPlural', { daysLeft })
+            }
+          </Text>
+          <TouchableOpacity onPress={() => setDismissed(true)} style={styles.bannerClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Text style={styles.bannerCloseText}>✕</Text>
+          </TouchableOpacity>
+        </LinearGradient>
       </TouchableOpacity>
       <PurchaseModal visible={showPurchase} onClose={() => setShowPurchase(false)} />
     </>
@@ -218,7 +227,8 @@ function ActivationScreen() {
         <Text style={styles.subtitle}>{t('license.trialEnded')}</Text>
 
         {/* Pricing card */}
-        <TouchableOpacity style={styles.pricingCard} onPress={() => setShowBuy(true)} activeOpacity={0.9}>
+        <TouchableOpacity style={[styles.pricingCard, { padding: 0, overflow: 'hidden' }]} onPress={() => setShowBuy(true)} activeOpacity={0.9}>
+          <LinearGradient colors={GRADIENTS.primary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ padding: 20, borderRadius: 16 }}>
           <View style={styles.pricingTop}>
             <View>
               <Text style={styles.pricingAmount}>$4.99<Text style={styles.pricingPer}>{t('license.perMonth')}</Text></Text>
@@ -232,6 +242,7 @@ function ActivationScreen() {
             ))}
             <Text style={styles.pricingMore}>+ more →</Text>
           </View>
+          </LinearGradient>
         </TouchableOpacity>
 
         {/* Activation card */}
@@ -249,14 +260,16 @@ function ActivationScreen() {
           />
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
           <TouchableOpacity
-            style={[styles.activateBtn, (activating || key.replace(/-/g, '').length < 16) && styles.activateBtnDisabled]}
+            style={[styles.activateBtn, { padding: 0, overflow: 'hidden' }, (activating || key.replace(/-/g, '').length < 16) && styles.activateBtnDisabled]}
             onPress={() => activate(key)}
             disabled={activating || key.replace(/-/g, '').length < 16}
           >
-            {activating
-              ? <ActivityIndicator color="#FFF" />
-              : <Text style={styles.activateBtnText}>{t('license.activate')}</Text>
-            }
+            <LinearGradient colors={GRADIENTS.primary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ paddingVertical: 14, alignItems: 'center', borderRadius: 12 }}>
+              {activating
+                ? <ActivityIndicator color="#FFF" />
+                : <Text style={styles.activateBtnText}>{t('license.activate')}</Text>
+              }
+            </LinearGradient>
           </TouchableOpacity>
         </View>
 
@@ -288,7 +301,7 @@ const styles = StyleSheet.create({
   subtitle:  { fontSize: 15, color: COLORS.textSecondary, marginBottom: 24 },
 
   pricingCard: {
-    width: '100%', backgroundColor: COLORS.primary, borderRadius: 16, padding: 20,
+    width: '100%', borderRadius: 16,
     marginBottom: 16,
   },
   pricingTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
@@ -317,8 +330,8 @@ const styles = StyleSheet.create({
   errorText: { fontSize: 13, color: '#E53935', textAlign: 'center', marginBottom: 12 },
 
   activateBtn: {
-    backgroundColor: COLORS.primary, borderRadius: 12,
-    paddingVertical: 14, alignItems: 'center',
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   activateBtnDisabled: { opacity: 0.45 },
   activateBtnText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
@@ -358,8 +371,9 @@ const pm = StyleSheet.create({
   buyInfo: { fontSize: 13, color: COLORS.textSecondary, lineHeight: 18, marginBottom: 16 },
 
   buyBtn: {
-    backgroundColor: COLORS.primary, borderRadius: 14, paddingVertical: 16,
-    alignItems: 'center', marginBottom: 20,
+    borderRadius: 14,
+    marginBottom: 20,
+    overflow: 'hidden',
   },
   buyBtnText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
 
@@ -375,8 +389,8 @@ const pm = StyleSheet.create({
   },
   errorText: { fontSize: 13, color: '#E53935', textAlign: 'center', marginBottom: 12 },
   activateBtn: {
-    backgroundColor: COLORS.primary, borderRadius: 12,
-    paddingVertical: 14, alignItems: 'center',
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   activateBtnDisabled: { opacity: 0.45 },
   activateBtnText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
@@ -391,7 +405,7 @@ const lim = StyleSheet.create({
   lockIcon:    { fontSize: 48, marginBottom: 12 },
   title:       { fontSize: 18, fontWeight: '800', color: COLORS.text, marginBottom: 10, textAlign: 'center' },
   msg:         { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 22, marginBottom: 24 },
-  upgradeBtn:  { width: '100%', backgroundColor: COLORS.primary, borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginBottom: 10 },
+  upgradeBtn:  { width: '100%', borderRadius: 14, marginBottom: 10, overflow: 'hidden' },
   upgradeBtnText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
   cancelBtn:   { paddingVertical: 8 },
   cancelBtnText: { fontSize: 14, color: COLORS.textSecondary },

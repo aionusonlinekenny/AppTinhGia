@@ -8,9 +8,11 @@ import {
   Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useApp, calculateDishCost, suggestPrices, calcGroupWeightedRate } from '../context/AppContext';
 import {
   COLORS,
+  GRADIENTS,
   Header,
   Card,
   Button,
@@ -188,10 +190,10 @@ export default function CalculatorScreen({ route }) {
                 </View>
               </View>
 
-              <View style={styles.totalRow}>
-                <Text style={styles.totalLabel}>{t('calculator.totalFoodCost')}</Text>
-                <Text style={styles.totalValue}>{formatCurrency(cost.totalCost)}</Text>
-              </View>
+              <LinearGradient colors={GRADIENTS.primary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.totalRow}>
+                <Text style={[styles.totalLabel, { color: '#FFF' }]}>{t('calculator.totalFoodCost')}</Text>
+                <Text style={[styles.totalValue, { color: '#FFF' }]}>{formatCurrency(cost.totalCost)}</Text>
+              </LinearGradient>
             </Card>
 
             {/* Price suggestions */}
@@ -262,18 +264,18 @@ export default function CalculatorScreen({ route }) {
                 </View>
               </View>
               {customPrice !== null && (
-                <View style={styles.customResult}>
-                  <Text style={styles.customResultLabel}>
+                <LinearGradient colors={GRADIENTS.primary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.customResult, { borderWidth: 0 }]}>
+                  <Text style={[styles.customResultLabel, { color: 'rgba(255,255,255,0.8)' }]}>
                     {t('calculator.menuPriceAt', { pct: customProfitInput })}
                   </Text>
-                  <Text style={styles.customResultValue}>{formatCurrency(customPrice)}</Text>
-                  <Text style={styles.customResultRounded}>
+                  <Text style={[styles.customResultValue, { color: '#FFF' }]}>{formatCurrency(customPrice)}</Text>
+                  <Text style={[styles.customResultRounded, { color: 'rgba(255,255,255,0.9)' }]}>
                     {t('calculator.roundedPrice', { rounded: formatCurrency(roundPrice(customPrice)) })}
                   </Text>
-                  <Text style={styles.customResultProfit}>
+                  <Text style={[styles.customResultProfit, { color: 'rgba(255,255,255,0.85)' }]}>
                     {t('calculator.profitPerDish', { profit: formatCurrency(customPrice - cost.totalCost) })}
                   </Text>
-                </View>
+                </LinearGradient>
               )}
             </Card>
 
