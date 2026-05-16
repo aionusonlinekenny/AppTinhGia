@@ -141,65 +141,59 @@ const VARIANT_CONFIG = {
   },
 };
 
+// 3D effect: outer View with paddingBottom creates "bottom edge" in shadow color
 export function Button({ label, onPress, variant = 'primary', style, disabled, loading }) {
   const cfg = VARIANT_CONFIG[variant] || VARIANT_CONFIG.primary;
+  const isOutline = variant === 'outline';
 
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      disabled={disabled || loading}
-      activeOpacity={0.82}
+    <View
       style={[
-        btnStyles.wrapper,
-        { shadowColor: cfg.shadow, opacity: (disabled || loading) ? 0.5 : 1 },
-        variant === 'outline' && btnStyles.outlineWrapper,
+        btnStyles.shadow3d,
+        { backgroundColor: cfg.shadow, shadowColor: cfg.shadow },
+        isOutline && btnStyles.outlineShadow,
+        { opacity: (disabled || loading) ? 0.5 : 1 },
         style,
       ]}
     >
-      {/* 3D bottom edge */}
-      <View style={[btnStyles.edge, { backgroundColor: cfg.shadow }]} />
-      <LinearGradient
-        colors={cfg.gradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[
-          btnStyles.inner,
-          variant === 'outline' && { borderWidth: 1.5, borderColor: COLORS.primary },
-        ]}
-      >
-        {loading
-          ? <ActivityIndicator color={cfg.text} size="small" />
-          : <Text style={[btnStyles.label, { color: cfg.text }]}>{label}</Text>
-        }
-      </LinearGradient>
-    </TouchableOpacity>
+      <TouchableOpacity onPress={onPress} disabled={disabled || loading} activeOpacity={0.82}>
+        <LinearGradient
+          colors={cfg.gradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[
+            btnStyles.inner,
+            isOutline && { borderWidth: 1.5, borderColor: COLORS.primary },
+          ]}
+        >
+          {loading
+            ? <ActivityIndicator color={cfg.text} size="small" />
+            : <Text style={[btnStyles.label, { color: cfg.text }]}>{label}</Text>
+          }
+        </LinearGradient>
+      </TouchableOpacity>
+    </View>
   );
 }
 
 const btnStyles = StyleSheet.create({
-  wrapper: {
+  shadow3d: {
     borderRadius: 12,
+    paddingBottom: 4,        // 4px bottom edge = 3D depth
     shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.35,
     shadowRadius: 6,
     elevation: 6,
     marginVertical: 2,
   },
-  outlineWrapper: {
+  outlineShadow: {
+    backgroundColor: '#BDBDBD',
     shadowOpacity: 0.12,
     elevation: 2,
-  },
-  edge: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '100%',
-    borderRadius: 12,
-    top: 3,            // shifts edge down to create 3D depth
+    paddingBottom: 2,
   },
   inner: {
-    borderRadius: 12,
+    borderRadius: 10,
     paddingVertical: 13,
     paddingHorizontal: 20,
     alignItems: 'center',
@@ -215,21 +209,18 @@ const btnStyles = StyleSheet.create({
 // ── FAB (Floating Action Button) ─────────────────────────────────
 export function FAB({ onPress, icon = '+', colors = GRADIENTS.primary }) {
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.82}
-      style={fabStyles.wrapper}
-    >
-      <View style={[fabStyles.edge, { backgroundColor: '#AC1900' }]} />
-      <LinearGradient
-        colors={colors}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={fabStyles.inner}
-      >
-        <Text style={fabStyles.icon}>{icon}</Text>
-      </LinearGradient>
-    </TouchableOpacity>
+    <View style={fabStyles.wrapper}>
+      <TouchableOpacity onPress={onPress} activeOpacity={0.82}>
+        <LinearGradient
+          colors={colors}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={fabStyles.inner}
+        >
+          <Text style={fabStyles.icon}>{icon}</Text>
+        </LinearGradient>
+      </TouchableOpacity>
+    </View>
   );
 }
 
@@ -239,20 +230,13 @@ const fabStyles = StyleSheet.create({
     right: 20,
     bottom: 24,
     borderRadius: 30,
+    backgroundColor: '#AC1900',  // 3D bottom edge color
+    paddingBottom: 4,             // creates the 3D depth
     shadowColor: '#AC1900',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.45,
     shadowRadius: 10,
     elevation: 10,
-  },
-  edge: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '100%',
-    borderRadius: 30,
-    top: 4,
   },
   inner: {
     width: 58,
