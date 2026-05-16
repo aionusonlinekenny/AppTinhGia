@@ -11,11 +11,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useApp, generateId, calculateDishCost, calcGroupWeightedRate, getIngredientDishUnit, getIngredientPricePerDishUnit, calculateStockCostPerOz } from '../context/AppContext';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
   COLORS,
+  GRADIENTS,
   Header,
   Card,
   Button,
+  FAB,
   Input,
   SectionTitle,
   EmptyState,
@@ -209,9 +212,7 @@ export default function DishesScreen({ navigation }) {
             placeholderTextColor={COLORS.textLight}
           />
         </View>
-        <TouchableOpacity onPress={openAdd} style={styles.addFab}>
-          <Text style={styles.addFabText}>+</Text>
-        </TouchableOpacity>
+        <FAB onPress={openAdd} />
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
@@ -467,12 +468,19 @@ export default function DishesScreen({ navigation }) {
                     {['All', ...Array.from(new Set(ingredients.map(i => i.category)))].map(cat => (
                       <TouchableOpacity
                         key={cat}
-                        style={[styles.catChip, ingCategory === cat && styles.catChipActive]}
+                        style={styles.catChip}
                         onPress={() => setIngCategory(cat)}
                       >
-                        <Text style={[styles.catChipText, ingCategory === cat && styles.catChipTextActive]}>
-                          {cat === 'All' ? t('dishes.all') : `${ING_CATEGORY_ICONS[cat] || '📦'} ${cat}`}
-                        </Text>
+                        {ingCategory === cat
+                          ? <LinearGradient colors={GRADIENTS.primary} start={{x:0,y:0}} end={{x:1,y:0}} style={styles.catChipActiveInner}>
+                              <Text style={styles.catChipTextActive}>
+                                {cat === 'All' ? t('dishes.all') : `${ING_CATEGORY_ICONS[cat] || '📦'} ${cat}`}
+                              </Text>
+                            </LinearGradient>
+                          : <Text style={styles.catChipText}>
+                              {cat === 'All' ? t('dishes.all') : `${ING_CATEGORY_ICONS[cat] || '📦'} ${cat}`}
+                            </Text>
+                        }
                       </TouchableOpacity>
                     ))}
                   </ScrollView>
@@ -885,13 +893,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
     borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
+    overflow: 'hidden',
     backgroundColor: COLORS.background,
   },
-  catChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  catChipText: { fontSize: 12, color: COLORS.textSecondary },
-  catChipTextActive: { color: '#FFF', fontWeight: '600' },
+  catChipActiveInner: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 16,
+  },
+  catChipText: { fontSize: 12, color: COLORS.textSecondary, paddingHorizontal: 12, paddingVertical: 5 },
+  catChipTextActive: { color: '#FFF', fontWeight: '600', fontSize: 12 },
   availableIngRow: {
     flexDirection: 'row',
     alignItems: 'center',
