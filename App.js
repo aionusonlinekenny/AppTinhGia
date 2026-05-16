@@ -4,7 +4,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { Text } from 'react-native';
+import { Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { AppProvider } from './src/context/AppContext';
 import { LicenseProvider } from './src/context/LicenseContext';
@@ -38,26 +39,36 @@ function TabNavigator() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarIcon: ({ focused }) => (
-          <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.6 }}>
-            {TAB_ICONS[route.name] || '●'}
-          </Text>
+          <View style={{
+            alignItems: 'center',
+            justifyContent: 'center',
+            ...(focused ? {
+              backgroundColor: 'rgba(230,81,0,0.10)',
+              borderRadius: 12,
+              paddingHorizontal: 10,
+              paddingVertical: 3,
+            } : {}),
+          }}>
+            <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.55 }}>
+              {TAB_ICONS[route.name] || '●'}
+            </Text>
+          </View>
         ),
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.textSecondary,
         tabBarStyle: {
-          height: 60,
+          height: 62,
           paddingBottom: 8,
           paddingTop: 6,
           backgroundColor: '#FFF',
-          borderTopWidth: 1,
-          borderTopColor: COLORS.border,
-          elevation: 8,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.06,
-          shadowRadius: 6,
+          borderTopWidth: 0,
+          elevation: 12,
+          shadowColor: '#E65100',
+          shadowOffset: { width: 0, height: -3 },
+          shadowOpacity: 0.12,
+          shadowRadius: 10,
         },
-        tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '700' },
       })}
     >
       <Tab.Screen name="Home"        component={HomeScreen}        options={{ tabBarLabel: t('tabs.overview') }} />
@@ -79,7 +90,14 @@ function RootNavigator() {
         options={{
           headerShown: true,
           title: 'Menu Pricing',
-          headerStyle: { backgroundColor: COLORS.primary },
+          headerBackground: () => (
+            <LinearGradient
+              colors={['#FF7043', '#E64A19', '#BF360C']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{ flex: 1 }}
+            />
+          ),
           headerTintColor: '#FFF',
           headerTitleStyle: { fontWeight: '700' },
         }}
@@ -90,7 +108,14 @@ function RootNavigator() {
         options={{
           headerShown: true,
           title: '⚡ Quick Cost',
-          headerStyle: { backgroundColor: '#2E7D32' },
+          headerBackground: () => (
+            <LinearGradient
+              colors={['#43A047', '#2E7D32', '#1B5E20']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{ flex: 1 }}
+            />
+          ),
           headerTintColor: '#FFF',
           headerTitleStyle: { fontWeight: '700' },
         }}

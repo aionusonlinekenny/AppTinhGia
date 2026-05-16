@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export const COLORS = {
   primary: '#E65100',
@@ -31,18 +32,39 @@ export const COLORS = {
   other: '#F3E5F5',
 };
 
+// Gradient presets for reuse across screens
+export const GRADIENTS = {
+  primary:  ['#FF7043', '#E65100'],
+  primaryV: ['#FF8A65', '#BF360C'],   // vertical variant
+  success:  ['#66BB6A', '#2E7D32'],
+  danger:   ['#EF5350', '#B71C1C'],
+  warning:  ['#FFA726', '#E65100'],
+  info:     ['#42A5F5', '#1565C0'],
+  gold:     ['#FFD54F', '#FF8F00'],
+  dark:     ['#546E7A', '#263238'],
+  purple:   ['#AB47BC', '#6A1B9A'],
+  teal:     ['#26C6DA', '#00838F'],
+  header:   ['#FF7043', '#E64A19', '#BF360C'],
+  quickCost:['#43A047', '#1B5E20'],
+};
+
+// ── Header ────────────────────────────────────────────────────────
 export function Header({ title, subtitle }) {
   return (
-    <View style={headerStyles.container}>
+    <LinearGradient
+      colors={GRADIENTS.header}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={headerStyles.container}
+    >
       <Text style={headerStyles.title}>{title}</Text>
       {subtitle ? <Text style={headerStyles.subtitle}>{subtitle}</Text> : null}
-    </View>
+    </LinearGradient>
   );
 }
 
 const headerStyles = StyleSheet.create({
   container: {
-    backgroundColor: COLORS.primary,
     paddingTop: 16,
     paddingBottom: 20,
     paddingHorizontal: 20,
@@ -51,68 +73,133 @@ const headerStyles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
     color: '#FFF',
+    textShadowColor: 'rgba(0,0,0,0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   subtitle: {
     fontSize: 13,
-    color: 'rgba(255,255,255,0.85)',
+    color: 'rgba(255,255,255,0.88)',
     marginTop: 4,
   },
 });
 
+// ── Card ─────────────────────────────────────────────────────────
 export function Card({ children, style }) {
-  return <View style={[cardStyles.card, style]}>{children}</View>;
+  return (
+    <View style={[cardStyles.card, style]}>
+      {children}
+    </View>
+  );
 }
 
 const cardStyles = StyleSheet.create({
   card: {
     backgroundColor: COLORS.surface,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowColor: '#E65100',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.10,
+    shadowRadius: 8,
+    elevation: 4,
   },
 });
 
-export function Button({ label, onPress, variant = 'primary', style, disabled }) {
-  const bg =
-    variant === 'primary'
-      ? COLORS.primary
-      : variant === 'danger'
-      ? COLORS.error
-      : variant === 'success'
-      ? COLORS.success
-      : COLORS.surface;
-  const textColor =
-    variant === 'outline' ? COLORS.primary : '#FFF';
-  const border =
-    variant === 'outline'
-      ? { borderWidth: 1.5, borderColor: COLORS.primary }
-      : {};
+// ── 3D Gradient Button ────────────────────────────────────────────
+const VARIANT_CONFIG = {
+  primary: {
+    gradient: GRADIENTS.primary,
+    shadow:   '#BF360C',
+    text:     '#FFF',
+  },
+  success: {
+    gradient: GRADIENTS.success,
+    shadow:   '#1B5E20',
+    text:     '#FFF',
+  },
+  danger: {
+    gradient: GRADIENTS.danger,
+    shadow:   '#7F0000',
+    text:     '#FFF',
+  },
+  warning: {
+    gradient: GRADIENTS.warning,
+    shadow:   '#BF360C',
+    text:     '#FFF',
+  },
+  info: {
+    gradient: GRADIENTS.info,
+    shadow:   '#0D47A1',
+    text:     '#FFF',
+  },
+  outline: {
+    gradient: ['#FFFFFF', '#F5F5F5'],
+    shadow:   '#BDBDBD',
+    text:     COLORS.primary,
+  },
+};
+
+export function Button({ label, onPress, variant = 'primary', style, disabled, loading }) {
+  const cfg = VARIANT_CONFIG[variant] || VARIANT_CONFIG.primary;
 
   return (
     <TouchableOpacity
       onPress={onPress}
-      disabled={disabled}
+      disabled={disabled || loading}
+      activeOpacity={0.82}
       style={[
-        btnStyles.btn,
-        { backgroundColor: bg, opacity: disabled ? 0.5 : 1 },
-        border,
+        btnStyles.wrapper,
+        { shadowColor: cfg.shadow, opacity: (disabled || loading) ? 0.5 : 1 },
+        variant === 'outline' && btnStyles.outlineWrapper,
         style,
       ]}
-      activeOpacity={0.8}
     >
-      <Text style={[btnStyles.label, { color: textColor }]}>{label}</Text>
+      {/* 3D bottom edge */}
+      <View style={[btnStyles.edge, { backgroundColor: cfg.shadow }]} />
+      <LinearGradient
+        colors={cfg.gradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[
+          btnStyles.inner,
+          variant === 'outline' && { borderWidth: 1.5, borderColor: COLORS.primary },
+        ]}
+      >
+        {loading
+          ? <ActivityIndicator color={cfg.text} size="small" />
+          : <Text style={[btnStyles.label, { color: cfg.text }]}>{label}</Text>
+        }
+      </LinearGradient>
     </TouchableOpacity>
   );
 }
 
 const btnStyles = StyleSheet.create({
-  btn: {
-    borderRadius: 10,
+  wrapper: {
+    borderRadius: 12,
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    elevation: 6,
+    marginVertical: 2,
+  },
+  outlineWrapper: {
+    shadowOpacity: 0.12,
+    elevation: 2,
+  },
+  edge: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '100%',
+    borderRadius: 12,
+    top: 3,            // shifts edge down to create 3D depth
+  },
+  inner: {
+    borderRadius: 12,
     paddingVertical: 13,
     paddingHorizontal: 20,
     alignItems: 'center',
@@ -120,10 +207,69 @@ const btnStyles = StyleSheet.create({
   },
   label: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
 });
 
+// ── FAB (Floating Action Button) ─────────────────────────────────
+export function FAB({ onPress, icon = '+', colors = GRADIENTS.primary }) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.82}
+      style={fabStyles.wrapper}
+    >
+      <View style={[fabStyles.edge, { backgroundColor: '#AC1900' }]} />
+      <LinearGradient
+        colors={colors}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={fabStyles.inner}
+      >
+        <Text style={fabStyles.icon}>{icon}</Text>
+      </LinearGradient>
+    </TouchableOpacity>
+  );
+}
+
+const fabStyles = StyleSheet.create({
+  wrapper: {
+    position: 'absolute',
+    right: 20,
+    bottom: 24,
+    borderRadius: 30,
+    shadowColor: '#AC1900',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.45,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  edge: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '100%',
+    borderRadius: 30,
+    top: 4,
+  },
+  inner: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  icon: {
+    fontSize: 26,
+    color: '#FFF',
+    lineHeight: 30,
+    fontWeight: '700',
+  },
+});
+
+// ── Input ─────────────────────────────────────────────────────────
 export function Input({
   label,
   value,
@@ -160,14 +306,14 @@ const inputStyles = StyleSheet.create({
     fontSize: 13,
     color: COLORS.textSecondary,
     marginBottom: 6,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1.5,
     borderColor: COLORS.border,
-    borderRadius: 10,
+    borderRadius: 12,
     backgroundColor: '#FAFAFA',
     paddingHorizontal: 12,
   },
@@ -186,6 +332,7 @@ const inputStyles = StyleSheet.create({
   error: { fontSize: 12, color: COLORS.error, marginTop: 4 },
 });
 
+// ── Section Title ─────────────────────────────────────────────────
 export function SectionTitle({ text, action, onAction }) {
   return (
     <View style={stStyles.row}>
@@ -219,6 +366,7 @@ const stStyles = StyleSheet.create({
   },
 });
 
+// ── Empty State ───────────────────────────────────────────────────
 export function EmptyState({ icon, message }) {
   return (
     <View style={emptyStyles.container}>
@@ -237,6 +385,7 @@ const emptyStyles = StyleSheet.create({
   message: { fontSize: 15, color: COLORS.textSecondary, textAlign: 'center' },
 });
 
+// ── Stat Card ─────────────────────────────────────────────────────
 export function StatCard({ label, value, color, icon }) {
   return (
     <View style={[scStyles.card, { borderLeftColor: color || COLORS.primary }]}>
@@ -252,27 +401,29 @@ export function StatCard({ label, value, color, icon }) {
 const scStyles = StyleSheet.create({
   card: {
     backgroundColor: COLORS.surface,
-    borderRadius: 10,
+    borderRadius: 12,
     padding: 14,
     marginBottom: 10,
     borderLeftWidth: 4,
     flexDirection: 'row',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
   },
   icon: { fontSize: 28, marginRight: 14 },
   value: { fontSize: 18, fontWeight: '700', color: COLORS.text },
   label: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
 });
 
+// ── Divider ───────────────────────────────────────────────────────
 export function Divider() {
   return <View style={{ height: 1, backgroundColor: COLORS.border, marginVertical: 12 }} />;
 }
 
+// ── Badge ─────────────────────────────────────────────────────────
 export function Badge({ text, color }) {
   return (
     <View style={[badgeStyles.badge, { backgroundColor: color || COLORS.secondary }]}>
@@ -291,6 +442,7 @@ const badgeStyles = StyleSheet.create({
   text: { fontSize: 12, fontWeight: '600' },
 });
 
+// ── Loader ────────────────────────────────────────────────────────
 export function Loader() {
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
@@ -298,3 +450,50 @@ export function Loader() {
     </View>
   );
 }
+
+// ── GradientButton (inline, no absolute positioning) ─────────────
+// Use this when Button wrapper causes layout issues
+export function GradientButton({ label, onPress, colors, textColor = '#FFF', style, disabled }) {
+  const gradColors = colors || GRADIENTS.primary;
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      disabled={disabled}
+      activeOpacity={0.82}
+      style={[gbStyles.wrapper, { opacity: disabled ? 0.5 : 1 }, style]}
+    >
+      <LinearGradient
+        colors={gradColors}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={gbStyles.inner}
+      >
+        <Text style={[gbStyles.label, { color: textColor }]}>{label}</Text>
+      </LinearGradient>
+    </TouchableOpacity>
+  );
+}
+
+const gbStyles = StyleSheet.create({
+  wrapper: {
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 5,
+    marginVertical: 2,
+  },
+  inner: {
+    borderRadius: 12,
+    paddingVertical: 13,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  label: {
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+});
