@@ -22,7 +22,8 @@ import {
   calcEmployeeWeeklyHours,
   calcGroupWeightedRate,
 } from '../context/AppContext';
-import { COLORS, Header, Card, Button, Input, SectionTitle, EmptyState, Divider } from '../components';
+import { COLORS, GRADIENTS, FAB, Header, Card, Button, Input, SectionTitle, EmptyState, Divider } from '../components';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useI18n } from '../i18n';
 import { useLicense } from '../context/LicenseContext';
 import { TrialLimitModal } from './LicenseGate';
@@ -406,7 +407,11 @@ function PayrollTab({ employees, payrollEntries, salesRecords, dispatch }) {
             <Text style={styles.tHint}>{t('staff.tapToEdit')}</Text>
           </View>
         )}
-        <TouchableOpacity style={styles.addBtn} onPress={openAdd}><Text style={styles.addBtnTxt}>{t('staff.addEntryBtn')}</Text></TouchableOpacity>
+        <TouchableOpacity onPress={openAdd} activeOpacity={0.85}>
+          <LinearGradient colors={GRADIENTS.primary} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.addBtn}>
+            <Text style={styles.addBtnTxt}>{t('staff.addEntryBtn')}</Text>
+          </LinearGradient>
+        </TouchableOpacity>
       </ScrollView>
 
       <Modal visible={modalVisible} animationType="slide" transparent>
@@ -748,7 +753,7 @@ const styles = StyleSheet.create({
   tdPrimary:    { color:COLORS.primary },
   tHint:        { fontSize:11, color:COLORS.textLight, textAlign:'center', paddingVertical:8 },
 
-  addBtn:       { margin:16, backgroundColor:COLORS.primary, borderRadius:12, paddingVertical:14, alignItems:'center' },
+  addBtn:       { margin:16, borderRadius:12, paddingVertical:14, alignItems:'center' },
   addBtnTxt:    { color:'#FFF', fontSize:15, fontWeight:'700' },
 
   // Employees

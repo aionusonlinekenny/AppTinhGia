@@ -24,6 +24,8 @@ import {
 } from '../context/AppContext';
 import {
   COLORS,
+  GRADIENTS,
+  FAB,
   Header,
   Card,
   Button,
@@ -32,6 +34,7 @@ import {
   EmptyState,
   Divider,
 } from '../components';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useI18n } from '../i18n';
 import { useLicense } from '../context/LicenseContext';
 import { TrialLimitModal } from './LicenseGate';
@@ -271,9 +274,7 @@ function IngredientsTab({ ingredients, employees, dispatch, t, formatCurrency, c
             </TouchableOpacity>
           ) : null}
         </View>
-        <TouchableOpacity onPress={openAdd} style={styles.addFab}>
-          <Text style={styles.addFabText}>+</Text>
-        </TouchableOpacity>
+        <FAB onPress={openAdd} />
       </View>
 
       <ScrollView
@@ -635,8 +636,10 @@ function StocksTab({ stockRecipes, ingredients, employees, dispatch, t, formatCu
             );
           })
         )}
-        <TouchableOpacity style={styles.addEntryBtn} onPress={openAdd}>
-          <Text style={styles.addEntryText}>{t('ingredients.addStockBtn')}</Text>
+        <TouchableOpacity onPress={openAdd} activeOpacity={0.85}>
+          <LinearGradient colors={GRADIENTS.primary} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.addEntryBtn}>
+            <Text style={styles.addEntryText}>{t('ingredients.addStockBtn')}</Text>
+          </LinearGradient>
         </TouchableOpacity>
       </ScrollView>
 
@@ -958,8 +961,10 @@ function WeeklyOrdersTab({ ingredients, supplyOrders, dispatch, t, formatCurrenc
           ))
         )}
 
-        <TouchableOpacity style={styles.addEntryBtn} onPress={openAdd}>
-          <Text style={styles.addEntryText}>+ Log Order</Text>
+        <TouchableOpacity onPress={openAdd} activeOpacity={0.85}>
+          <LinearGradient colors={GRADIENTS.primary} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.addEntryBtn}>
+            <Text style={styles.addEntryText}>+ Log Order</Text>
+          </LinearGradient>
         </TouchableOpacity>
       </ScrollView>
 
@@ -1196,7 +1201,6 @@ const styles = StyleSheet.create({
 
   // Add entry button
   addEntryBtn: {
-    backgroundColor: COLORS.primary,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
